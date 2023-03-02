@@ -11,8 +11,12 @@
 
     <artifactId>base-core</artifactId>
     <packaging>pom</packaging>
+
     <modules>
         <module>core-service</module>
+        <module>core-bucket</module>
+        <module>core-metadata</module>
+        <module>core-storage-engine</module>
     </modules>
 
     <properties>

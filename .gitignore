@@ -1,0 +1,5 @@
+/.idea/
+/base-common/target/
+/base-core/core-bucket/target/
+/base-core/core-service/target/
+/base-web/target/
