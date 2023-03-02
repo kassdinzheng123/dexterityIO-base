@@ -17,4 +17,9 @@ public class WebController {
         int result = bucketApi.deleteBucket();
         return new R<>(200,"请求成功",result);
     }
+
+    @GetMapping("/test")
+    public R<?> test1(){
+        return new R<>(200,"请求成功");
+    }
 }
