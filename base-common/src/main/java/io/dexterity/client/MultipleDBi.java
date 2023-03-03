@@ -58,8 +58,9 @@ public class MultipleDBi {
 
     public String get(String key){
         ByteBuffer byteBuffer = stringToBytes(key);
+        ByteBuffer res;
         try(Txn<ByteBuffer> txn = env.txnRead()){
-            res = db.get(txn, byteBuffer);
+             res = db.get(txn, byteBuffer);
         }
         if (res == null) return null;
         return bytesToString(res);
