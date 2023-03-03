@@ -1,0 +1,9 @@
+spring:
+  cache:
+    cache-names: LMDB-MD
+    caffeine:
+      spec: initialCapacity=100,maximumSize=500,expireAfterWrite=5s
+    type: caffeine
+  aop:
+    auto: true
+    proxy-target-class: true
