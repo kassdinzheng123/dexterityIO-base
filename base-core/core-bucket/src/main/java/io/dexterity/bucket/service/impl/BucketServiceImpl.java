@@ -1,19 +1,18 @@
-package io.dexterity.service.impl;
+package io.dexterity.bucket.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import io.dexterity.dao.BucketDao;
-import io.dexterity.pojo.po.Bucket;
-import io.dexterity.service.BucketService;
-import lombok.AllArgsConstructor;
+import io.dexterity.bucket.dao.BucketDao;
+import io.dexterity.bucket.po.pojo.Bucket;
+import io.dexterity.bucket.service.BucketService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-@AllArgsConstructor
 public class BucketServiceImpl extends ServiceImpl<BucketDao, Bucket> implements BucketService {
-    private final BucketDao bucketDao;
-
+    @Autowired
+    private BucketDao bucketDao;
 
     @Override
     public int createBucket(Bucket bucket) {
@@ -27,6 +26,6 @@ public class BucketServiceImpl extends ServiceImpl<BucketDao, Bucket> implements
 
     @Override
     public List<Bucket> listBucket() {
-        return null;
+        return bucketDao.selectList(null);
     }
 }

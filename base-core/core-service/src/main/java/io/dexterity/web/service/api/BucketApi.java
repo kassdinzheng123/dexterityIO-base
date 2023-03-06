@@ -1,6 +1,6 @@
-package io.dexterity.api;
+package io.dexterity.web.service.api;
 
-import io.dexterity.pojo.po.Bucket;
+import io.dexterity.bucket.po.pojo.Bucket;
 
 import java.util.List;
 

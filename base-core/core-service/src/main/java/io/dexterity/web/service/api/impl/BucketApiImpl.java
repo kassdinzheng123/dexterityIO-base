@@ -1,15 +1,17 @@
-package io.dexterity.api.impl;
+package io.dexterity.web.service.api.impl;
 
-import io.dexterity.api.BucketApi;
-import io.dexterity.pojo.po.Bucket;
-import io.dexterity.service.BucketService;
-import lombok.AllArgsConstructor;
+import io.dexterity.bucket.po.pojo.Bucket;
+import io.dexterity.bucket.service.BucketService;
+import io.dexterity.web.service.api.BucketApi;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-@AllArgsConstructor
+@Component
 public class BucketApiImpl implements BucketApi {
-    private final BucketService bucketService;
+    @Autowired
+    private BucketService bucketService;
 
     @Override
     public int createBucket(Bucket bucket) {

@@ -3,10 +3,21 @@ server:
 
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/swpu_oss_0.2?characterEncoding=utf-8&serverTimezone=UTC
-    username: root
-    password: 123456
-    driver-class-name: com.mysql.cj.jdbc.Driver
+#    dynamic:
+#      primary: derby # 设置默认的数据源
+#      strict: false # 严格匹配数据源，为true时，未匹配指定数据库抛出异常
+#      datasource:
+#        derby:
+    driver-class-name: org.apache.derby.iapi.jdbc.AutoloadedDriver
+    url: jdbc:derby:dexterityData;create=true
+#        mysql:
+#          driver-class-name: com.mysql.cj.jdbc.Driver
+#          url: jdbc:mysql://localhost:3306/swpu_oss_0.2?characterEncoding=utf-8&serverTimezone=UTC
+#          username: root
+#          password: 123456
+
+
+
 
 #mybatis-plus:
 #  # xml文件路径

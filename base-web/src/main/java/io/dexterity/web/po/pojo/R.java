@@ -1,4 +1,4 @@
-package io.dexterity.pojo.po;
+package io.dexterity.web.po.pojo;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;

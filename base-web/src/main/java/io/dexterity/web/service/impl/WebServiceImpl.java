@@ -1,6 +1,6 @@
-package io.dexterity.service.impl;
+package io.dexterity.web.service.impl;
 
-import io.dexterity.service.WebService;
+import io.dexterity.web.service.WebService;
 import org.springframework.stereotype.Service;
 
 @Service

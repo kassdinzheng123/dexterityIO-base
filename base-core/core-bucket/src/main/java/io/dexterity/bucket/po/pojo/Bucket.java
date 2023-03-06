@@ -1,4 +1,4 @@
-package io.dexterity.pojo.po;
+package io.dexterity.bucket.po.pojo;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

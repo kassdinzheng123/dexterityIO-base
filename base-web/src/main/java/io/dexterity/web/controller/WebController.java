@@ -1,7 +1,7 @@
-package io.dexterity.controller;
+package io.dexterity.web.controller;
 
-import io.dexterity.api.BucketApi;
-import io.dexterity.pojo.po.R;
+import io.dexterity.web.service.api.BucketApi;
+import io.dexterity.web.po.pojo.R;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,9 +13,8 @@ public class WebController {
     @Autowired
     private BucketApi bucketApi;
     @GetMapping("/bucket")
-    public R<?> test(){
-        int result = bucketApi.deleteBucket();
-        return new R<>(200,"请求成功",result);
+    public R<?> list(){
+        return new R<>(200,"请求成功",bucketApi.listBucket());
     }
 
     @GetMapping("/test")
