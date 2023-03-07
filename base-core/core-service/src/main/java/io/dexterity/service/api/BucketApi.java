@@ -1,4 +1,4 @@
-package io.dexterity.web.service.api;
+package io.dexterity.service.api;
 
 import io.dexterity.bucket.po.pojo.Bucket;
 

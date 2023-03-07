@@ -5,3 +5,5 @@
 /base-web/target/
 /sampleDB/
 /derby.log
+/dexterityData/
+/dexterity-io-base.iml

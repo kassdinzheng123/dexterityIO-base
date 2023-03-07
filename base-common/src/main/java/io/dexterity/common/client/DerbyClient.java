@@ -1,4 +1,4 @@
-package io.dexterity.client;
+package io.dexterity.common.client;
 
 import java.sql.*;
 
@@ -65,17 +65,23 @@ public class DerbyClient {
 
     public static void main(String[] args) throws SQLException {
         DerbyClient client = new DerbyClient();
-        client.createTable("users", "id INT PRIMARY KEY", "name VARCHAR(20)", "age INT");
-        client.insert("users", 1, "Alice", 20);
-        client.insert("users", 2, "Bob", 25);
-        ResultSet rs = client.select("users");
-        while (rs.next()) {
-            int id = rs.getInt("id");
-            String name = rs.getString("name");
-            int age = rs.getInt("age");
-            System.out.println(id + ", " + name + ", " + age);
-        }
+        client.createTable(
+                "bucket",
+                "bucket_id INT PRIMARY KEY",
+                "bucket_name VARCHAR(60)",
+                "access_authority VARCHAR(60)",
+                "domain_name VARCHAR(60)",
+                "region VARCHAR(60)");
+//        client.insert("users", 1, "Alice", 20);
+//        client.insert("users", 2, "Bob", 25);
+//        ResultSet rs = client.select("bucket");
+//        while (rs.next()) {
+//            int id = rs.getInt("id");
+//            String name = rs.getString("name");
+//            int age = rs.getInt("age");
+//            System.out.println(id + ", " + name + ", " + age);
+//        }
+
         client.close();
     }
-
 }
