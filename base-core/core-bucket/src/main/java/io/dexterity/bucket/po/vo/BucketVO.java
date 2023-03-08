@@ -1,7 +1,7 @@
-package io.dexterity.bucket.po.pojo;
+package io.dexterity.bucket.po.vo;
 
+import cn.hutool.json.JSONArray;
 import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,8 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@TableName(value = "bucket")
-public class Bucket {
+public class BucketVO {
     /**
      * 存储桶id
      */
@@ -39,5 +38,5 @@ public class Bucket {
     /**
      * 存储桶标签,KV
      */
-    private String tags;
+    private JSONArray tags;
 }

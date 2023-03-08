@@ -27,7 +27,7 @@ public class DerbyClient {
     }
 
     /**
-     * 创建一个新表
+     * 创建表
      */
     public void createTable(String tableName, String... columns) throws SQLException {
         StringBuilder sb = new StringBuilder();
@@ -43,45 +43,39 @@ public class DerbyClient {
     }
 
     /**
-     * 向表中插入数据
+     * 查询库中的所有表信息
+     * @throws SQLException
      */
-    public void insert(String tableName, Object... values) throws SQLException {
-        StringBuilder sb = new StringBuilder();
-        sb.append("INSERT INTO ").append(tableName).append(" VALUES(");
-        for (int i = 0; i < values.length; i++) {
-            sb.append("?");
-            if (i < values.length - 1) {
-                sb.append(",");
-            }
+    public void listTable() throws SQLException {
+        String sql = "SELECT TABLENAME FROM SYS.SYSTABLES WHERE TABLETYPE='T'";
+        ResultSet rs = stmt.executeQuery(sql);
+        while (rs.next()) {
+            String tableName = rs.getString("TABLENAME");
+            System.out.println(tableName);
         }
-        sb.append(")");
-        PreparedStatement ps = conn.prepareStatement(sb.toString());
-        for (int i = 0; i < values.length; i++) {
-            ps.setObject(i + 1, values[i]);
-        }
-        ps.executeUpdate();
     }
 
+    /**
+     * 删除表
+     */
+    public void deleteTable(String tableName) throws SQLException{
+        String sql = "DROP TABLE " + tableName;
+        stmt.executeUpdate(sql);
+    }
 
     public static void main(String[] args) throws SQLException {
         DerbyClient client = new DerbyClient();
+        client.deleteTable("BUCKET");
         client.createTable(
                 "bucket",
                 "bucket_id INT PRIMARY KEY",
-                "bucket_name VARCHAR(60)",
-                "access_authority VARCHAR(60)",
-                "domain_name VARCHAR(60)",
-                "region VARCHAR(60)");
-//        client.insert("users", 1, "Alice", 20);
-//        client.insert("users", 2, "Bob", 25);
-//        ResultSet rs = client.select("bucket");
-//        while (rs.next()) {
-//            int id = rs.getInt("id");
-//            String name = rs.getString("name");
-//            int age = rs.getInt("age");
-//            System.out.println(id + ", " + name + ", " + age);
-//        }
-
+                "bucket_name VARCHAR(255)",
+                "access_authority VARCHAR(255)",
+                "domain_name VARCHAR(255)",
+                "region VARCHAR(255)",
+                "status INT",
+                "tags VARCHAR(255)");
+        client.listTable();
         client.close();
     }
 }

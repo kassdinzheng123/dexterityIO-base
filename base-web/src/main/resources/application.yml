@@ -16,18 +16,24 @@ spring:
           username: root
           password: 123456
 
+mybatis-plus:
+  configuration:
+    # 驼峰转换
+    map-underscore-to-camel-case: true
+    # 是否开启二级缓存
+    cache-enabled: true
+    # 打印sql
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
-
-
-#mybatis-plus:
-#  # xml文件路径
-#  mapperLocations: classpath*:/mapper/**/*.xml
-#  # 实体类路径
-#  type-aliases-package: io.dexterity.pojo
-#  configuration:
-#    # 驼峰转换
-#    map-underscore-to-camel-case: true
-#    # 是否开启缓存
-#    cache-enabled: false
-#    # 打印sql
-#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+# springdoc-openapi项目配置
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+#    - group: 'default'
+#      paths-to-match: '/**'
+#      packages-to-scan: com.xiaominfo.knife4j.demo.web
