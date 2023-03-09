@@ -19,12 +19,12 @@ public class StorageApiImpl implements StorageApi {
     }
 
     @Override
-    public List<String> getAllKey(String cfName) throws RocksDBException {
+    public List<byte[]> getAllKey(String cfName) throws RocksDBException {
         return storageService.getAllKey(cfName);
     }
 
     @Override
-    public List<String> getKeysFrom(String cfName, String lastKey) throws RocksDBException {
+    public List<byte[]> getKeysFrom(String cfName, byte[] lastKey) throws RocksDBException {
         return storageService.getKeysFrom(cfName,lastKey);
     }
 
@@ -39,12 +39,12 @@ public class StorageApiImpl implements StorageApi {
     }
 
     @Override
-    public RocksDBVo get(String cfName, String key) throws RocksDBException {
+    public RocksDBVo get(String cfName, byte[] key) throws RocksDBException {
         return storageService.get(cfName,key);
     }
 
     @Override
-    public RocksDBVo delete(String cfName, String key) throws RocksDBException {
+    public RocksDBVo delete(String cfName, byte[] key) throws RocksDBException {
         return storageService.delete(cfName,key);
     }
 

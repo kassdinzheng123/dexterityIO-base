@@ -13,6 +13,6 @@ public class RocksDBVo implements Serializable {
     @Builder.Default
     private String cfName = "default";
     @NonNull
-    private String key;
-    private String value;
+    private byte[] key;
+    private byte[] value;
 }

@@ -8,12 +8,12 @@ import java.util.Set;
 
 public interface StorageApi {
     int getCount( String cfName) throws RocksDBException;
-    List<String> getAllKey(String cfName) throws RocksDBException;
-    List<String> getKeysFrom(String cfName,String lastKey) throws RocksDBException;
+    List<byte[]> getAllKey(String cfName) throws RocksDBException;
+    List<byte[]> getKeysFrom(String cfName,byte[] lastKey) throws RocksDBException;
     List<RocksDBVo> getAll(String cfName) throws RocksDBException;
     List<RocksDBVo> multiGetAsList(List<RocksDBVo> rocksDBVos) throws RocksDBException;
-    RocksDBVo get(String cfName, String key) throws RocksDBException;
-    RocksDBVo delete(String cfName, String key) throws RocksDBException;
+    RocksDBVo get(String cfName, byte[] key) throws RocksDBException;
+    RocksDBVo delete(String cfName, byte[] key) throws RocksDBException;
     int putBatch(List<RocksDBVo> rocksDBVos) throws RocksDBException;
     int put(RocksDBVo rocksDBVo) throws RocksDBException;
     Set<String> cfAll();

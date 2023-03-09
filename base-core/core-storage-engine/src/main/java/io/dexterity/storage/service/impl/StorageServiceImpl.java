@@ -31,7 +31,7 @@ public class StorageServiceImpl implements StorageService {
     }
 
     public int putBatch(List<RocksDBVo> rocksDBVos) throws RocksDBException {
-        Map<String, String> map = new HashMap<>();
+        Map<byte[], byte[]> map = new HashMap<>();
         for (RocksDBVo rocksDBVo : rocksDBVos) {
             map.put(rocksDBVo.getKey(), rocksDBVo.getValue());
         }
@@ -39,45 +39,45 @@ public class StorageServiceImpl implements StorageService {
         return 1;
     }
 
-    public RocksDBVo delete(String cfName, String key) throws RocksDBException {
-        String value = RocksDBClient.get(cfName, key);
+    public RocksDBVo delete(String cfName, byte[] key) throws RocksDBException {
+        byte[] value = RocksDBClient.get(cfName, key);
         RocksDBClient.delete(cfName, key);
         return RocksDBVo.builder().cfName(cfName).key(key).value(value).build();
     }
 
-    public RocksDBVo get(String cfName, String key) throws RocksDBException {
-        String value = RocksDBClient.get(cfName, key);
+    public RocksDBVo get(String cfName, byte[] key) throws RocksDBException {
+        byte[] value = RocksDBClient.get(cfName, key);
         return RocksDBVo.builder().cfName(cfName).key(key).value(value).build();
     }
 
     public List<RocksDBVo> multiGetAsList(List<RocksDBVo> rocksDBVos) throws RocksDBException {
-        List<RocksDBVo> list = new ArrayList<>();
-        String cfName = rocksDBVos.get(0).getCfName();
-        List<String> keys = new ArrayList<>(rocksDBVos.size());
-        for (RocksDBVo rocksDBVo : rocksDBVos) {
-            keys.add(rocksDBVo.getKey());
-        }
-        Map<String, String> map = RocksDBClient.multiGetAsMap(cfName, keys);
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-            RocksDBVo rocksDBVo = RocksDBVo.builder().cfName(cfName).key(entry.getKey()).value(entry.getValue()).build();
-            list.add(rocksDBVo);
-        }
-        return list;
+//        List<RocksDBVo> list = new ArrayList<>();
+//        String cfName = rocksDBVos.get(0).getCfName();
+//        List<byte[]> keys = new ArrayList<>(rocksDBVos.size());
+//        for (RocksDBVo rocksDBVo : rocksDBVos) {
+//            keys.add(rocksDBVo.getKey());
+//        }
+//        Map<byte[], byte[]> map = RocksDBClient.multiGetAsMap(cfName, keys);
+//        for (Map.Entry<String, String> entry : map.entrySet()) {
+//            RocksDBVo rocksDBVo = RocksDBVo.builder().cfName(cfName).key(entry.getKey()).value(entry.getValue()).build();
+//            list.add(rocksDBVo);
+//        }
+        return null;
     }
 
     public List<RocksDBVo> getAll(String cfName) throws RocksDBException {
         List<RocksDBVo> rocksDBVos = new ArrayList<>();
-        Map<String, String> all = RocksDBClient.getAll(cfName);
-        for (Map.Entry<String, String> entry : all.entrySet()) {
+        Map<byte[], byte[]> all = RocksDBClient.getAll(cfName);
+        for (Map.Entry<byte[], byte[]> entry : all.entrySet()) {
             RocksDBVo rocksDBVo = RocksDBVo.builder().cfName(cfName).key(entry.getKey()).value(entry.getValue()).build();
             rocksDBVos.add(rocksDBVo);
         }
         return rocksDBVos;
     }
 
-    public List<String> getKeysFrom(String cfName,String lastKey) throws RocksDBException {
-        List<String> data = new ArrayList<>();
-        List<String> keys;
+    public List<byte[]> getKeysFrom(String cfName,byte[] lastKey) throws RocksDBException {
+        List<byte[]> data = new ArrayList<>();
+        List<byte[]> keys;
         while (true) {
             keys = RocksDBClient.getKeysFrom(cfName, lastKey);
             if (keys.isEmpty()) {
@@ -90,7 +90,7 @@ public class StorageServiceImpl implements StorageService {
         return data;
     }
 
-    public List<String> getAllKey(String cfName) throws RocksDBException {
+    public List<byte[]> getAllKey(String cfName) throws RocksDBException {
         return RocksDBClient.getAllKey(cfName);
     }
 

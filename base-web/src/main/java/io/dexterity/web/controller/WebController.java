@@ -2,7 +2,6 @@ package io.dexterity.web.controller;
 
 import io.dexterity.bucket.po.vo.BucketVO;
 import io.dexterity.service.api.BucketApi;
-import io.dexterity.service.api.StorageApi;
 import io.dexterity.web.po.pojo.R;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -12,8 +11,6 @@ import org.springframework.web.bind.annotation.*;
 public class WebController {
     @Autowired
     private BucketApi bucketApi;
-    @Autowired
-    private StorageApi storageApi;
 
     @GetMapping("/bucket")
     public R<?> listBucket(){
