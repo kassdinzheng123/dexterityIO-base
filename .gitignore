@@ -1,0 +1,9 @@
+/.idea/
+/base-common/target/
+/base-core/core-bucket/target/
+/base-core/core-service/target/
+/base-web/target/
+/sampleDB/
+/derby.log
+/dexterityData/
+/dexterity-io-base.iml

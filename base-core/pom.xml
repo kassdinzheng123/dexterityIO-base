@@ -11,8 +11,12 @@
 
     <artifactId>base-core</artifactId>
     <packaging>pom</packaging>
+
     <modules>
         <module>core-service</module>
+        <module>core-bucket</module>
+        <module>core-metadata</module>
+        <module>core-storage-engine</module>
     </modules>
 
     <properties>
@@ -26,6 +30,11 @@
             <groupId>org.example</groupId>
             <artifactId>base-common</artifactId>
             <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.xiaoymin</groupId>
+            <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+            <version>4.0.0</version>
         </dependency>
     </dependencies>
 

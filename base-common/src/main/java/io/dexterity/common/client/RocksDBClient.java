@@ -1,14 +1,11 @@
-package io.dexterity.client;
+package io.dexterity.common.client;
 
 import lombok.extern.slf4j.Slf4j;
 import org.rocksdb.*;
 import org.springframework.util.ObjectUtils;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
@@ -95,119 +92,98 @@ public class RocksDBClient {
     /**
      * 增
      */
-    public static void put(String cfName, String key, String value) throws RocksDBException {
+    public static void put(String cfName, byte[] key, byte[] value) throws RocksDBException {
         ColumnFamilyHandle columnFamilyHandle = cfAddIfNotExist(cfName); //获取列族Handle
-        rocksDB.put(columnFamilyHandle, key.getBytes(), value.getBytes());
+        rocksDB.put(columnFamilyHandle, key, value);
     }
 
     /**
      * 增（批量）
      */
-    public static void batchPut(String cfName, Map<String, String> map) throws RocksDBException {
+    public static void batchPut(String cfName, Map<byte[], byte[]> map) throws RocksDBException {
         ColumnFamilyHandle columnFamilyHandle = cfAddIfNotExist(cfName); //获取列族Handle
         WriteOptions writeOptions = new WriteOptions();
         WriteBatch writeBatch = new WriteBatch();
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-            writeBatch.put(columnFamilyHandle, entry.getKey().getBytes(), entry.getValue().getBytes());
+        for (Map.Entry<byte[], byte[]> entry : map.entrySet()) {
+            writeBatch.put(columnFamilyHandle, entry.getKey(), entry.getValue());
         }
         rocksDB.write(writeOptions, writeBatch);
     }
 
     /**
-     * 删
+     * 根据key删kv
      */
-    public static void delete(String cfName, String key) throws RocksDBException {
+    public static void delete(String cfName, byte[] key) throws RocksDBException {
         ColumnFamilyHandle columnFamilyHandle = cfAddIfNotExist(cfName); //获取列族Handle
-        rocksDB.delete(columnFamilyHandle, key.getBytes());
+        rocksDB.delete(columnFamilyHandle, key);
     }
 
     /**
-     * 查
+     * 根据key查value
      */
-    public static String get(String cfName, String key) throws RocksDBException {
-        String value = null;
+    public static byte[] get(String cfName, byte[] key) throws RocksDBException {
         ColumnFamilyHandle columnFamilyHandle = cfAddIfNotExist(cfName); //获取列族Handle
-        byte[] bytes = rocksDB.get(columnFamilyHandle, key.getBytes());
-        if (!ObjectUtils.isEmpty(bytes)) {
-            value = new String(bytes, StandardCharsets.UTF_8);
-        }
-        return value;
+        return rocksDB.get(columnFamilyHandle, key);
     }
 
     /**
-     * 查（多个键值对）
+     * 根据多个key，查多个KV
      */
-    public static Map<String, String> multiGetAsMap(String cfName, List<String> keys) throws RocksDBException {
-        Map<String, String> map = new HashMap<>(keys.size());
+    public static Map<byte[], byte[]> multiGetAsMap(String cfName, List<byte[]> keys) throws RocksDBException {
+        Map<byte[], byte[]> map = new HashMap<>(keys.size());
         ColumnFamilyHandle columnFamilyHandle = cfAddIfNotExist(cfName); //获取列族Handle
         List<ColumnFamilyHandle> columnFamilyHandles;
-        List<byte[]> keyBytes = keys.stream().map(String::getBytes).collect(Collectors.toList());
         columnFamilyHandles = IntStream.range(0, keys.size()).mapToObj(i -> columnFamilyHandle).collect(Collectors.toList());
-        List<byte[]> bytes = rocksDB.multiGetAsList(columnFamilyHandles, keyBytes);
+        List<byte[]> bytes = rocksDB.multiGetAsList(columnFamilyHandles, keys);
         for (int i = 0; i < bytes.size(); i++) {
-            byte[] valueBytes = bytes.get(i);
-            String value = "";
-            if (!ObjectUtils.isEmpty(valueBytes)) {
-                value = new String(valueBytes, StandardCharsets.UTF_8);
-            }
-            map.put(keys.get(i), value);
+            map.put(keys.get(i), bytes.get(i));
         }
         return map;
     }
 
     /**
-     * 查（多个值）
+     * 根据多个key，查多个value
      */
-    public static List<String> multiGetValueAsList(String cfName, List<String> keys) throws RocksDBException {
-        List<String> values = new ArrayList<>(keys.size());
+    public static List<byte[]> multiGetValueAsList(String cfName, List<byte[]> keys) throws RocksDBException {
         ColumnFamilyHandle columnFamilyHandle = cfAddIfNotExist(cfName); //获取列族Handle
         List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
-        List<byte[]> keyBytes = keys.stream().map(String::getBytes).collect(Collectors.toList());
         for (int i = 0; i < keys.size(); i++) {
             columnFamilyHandles.add(columnFamilyHandle);
         }
-        List<byte[]> bytes = rocksDB.multiGetAsList(columnFamilyHandles, keyBytes);
-        for (byte[] valueBytes : bytes) {
-            String value = "";
-            if (!ObjectUtils.isEmpty(valueBytes)) {
-                value = new String(valueBytes, StandardCharsets.UTF_8);
-            }
-            values.add(value);
-        }
-        return values;
+        return rocksDB.multiGetAsList(columnFamilyHandles, keys);
     }
 
     /**
-     * 查（所有键）
+     * 根据列族查所有key
      */
-    public static List<String> getAllKey(String cfName) throws RocksDBException {
-        List<String> list = new ArrayList<>();
+    public static List<byte[]> getAllKey(String cfName) throws RocksDBException {
+        List<byte[]> list = new ArrayList<>();
         ColumnFamilyHandle columnFamilyHandle = cfAddIfNotExist(cfName); //获取列族Handle
         try (RocksIterator rocksIterator = rocksDB.newIterator(columnFamilyHandle)) {
             for (rocksIterator.seekToFirst(); rocksIterator.isValid(); rocksIterator.next()) {
-                list.add(new String(rocksIterator.key(), StandardCharsets.UTF_8));
+                list.add(rocksIterator.key());
             }
         }
         return list;
     }
 
     /**
-     * 分片查（键），从lastKey开始查
+     * 根据列族，游标查所有key，从lastKey开始查
      */
-    public static List<String> getKeysFrom(String cfName, String lastKey) throws RocksDBException {
-        List<String> list = new ArrayList<>(GET_KEYS_BATCH_SIZE);
+    public static List<byte[]> getKeysFrom(String cfName, byte[] lastKey) throws RocksDBException {
+        List<byte[]> list = new ArrayList<>(GET_KEYS_BATCH_SIZE);
         // 获取列族Handle
         ColumnFamilyHandle columnFamilyHandle = cfAddIfNotExist(cfName);
         try (RocksIterator rocksIterator = rocksDB.newIterator(columnFamilyHandle)) {
             if (lastKey != null) {
-                rocksIterator.seek(lastKey.getBytes(StandardCharsets.UTF_8));
+                rocksIterator.seek(lastKey);
                 rocksIterator.next();
             } else {
                 rocksIterator.seekToFirst();
             }
             // 一批次最多 GET_KEYS_BATCH_SIZE 个 key
             while (rocksIterator.isValid() && list.size() < GET_KEYS_BATCH_SIZE) {
-                list.add(new String(rocksIterator.key(), StandardCharsets.UTF_8));
+                list.add(rocksIterator.key());
                 rocksIterator.next();
             }
         }
@@ -215,14 +191,14 @@ public class RocksDBClient {
     }
 
     /**
-     * 查（所有键值）
+     * 根据列族查全部KV
      */
-    public static Map<String, String> getAll(String cfName) throws RocksDBException {
-        Map<String, String> map = new HashMap<>();
+    public static Map<byte[], byte[]> getAll(String cfName) throws RocksDBException {
+        Map<byte[], byte[]> map = new HashMap<>();
         ColumnFamilyHandle columnFamilyHandle = cfAddIfNotExist(cfName); //获取列族Handle
         try (RocksIterator rocksIterator = rocksDB.newIterator(columnFamilyHandle)) {
             for (rocksIterator.seekToFirst(); rocksIterator.isValid(); rocksIterator.next()) {
-                map.put(new String(rocksIterator.key(), StandardCharsets.UTF_8), new String(rocksIterator.value(), StandardCharsets.UTF_8));
+                map.put(rocksIterator.key(), rocksIterator.value());
             }
         }
         return map;
