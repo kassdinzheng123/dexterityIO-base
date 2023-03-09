@@ -1,0 +1,29 @@
+spring:
+  cache:
+    cache-names: LMDB-MD
+    caffeine:
+      spec: initialCapacity=100,maximumSize=500,expireAfterWrite=5s
+    type: caffeine
+  aop:
+    auto: true
+    proxy-target-class: true
+jasypt:
+  encryptor:
+    algorithm: PBEWithMD5AndDES
+    password: TEST-SECRET-KEY
+
+jetcache:
+  statIntervalMinutes: 15
+  areaInCacheName: false
+  hidePackages: com.alibaba
+  local:
+    default:
+      type: caffeine
+      limit: 100
+      keyConvertor: fastjson2 #other choose：fastjson/jackson
+      expireAfterWriteInMillis: 100000
+    otherArea:
+      type: linkedhashmap
+      limit: 100
+      keyConvertor: none
+      expireAfterWriteInMillis: 100000
