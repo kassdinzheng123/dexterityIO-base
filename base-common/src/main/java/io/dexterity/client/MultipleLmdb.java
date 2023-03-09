@@ -10,6 +10,10 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.util.RamUsageEstimator;
 import org.lmdbjava.Env;
+import org.lmdbjava.EnvFlags;
+import org.lmdbjava.Txn;
+import org.rocksdb.Transaction;
+import org.springframework.stereotype.Component;
 
 import java.io.*;
 import java.lang.reflect.Type;
@@ -25,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 我们使用DB对不同存储桶中的元数据类进行拆分
  */
 @Slf4j
+@Component
 public class MultipleLmdb {
 
 
@@ -60,11 +65,9 @@ public class MultipleLmdb {
      */
     private static void writeEnvsInfo(LMDBEnvSettings lmdbEnvSettings){
         Map<String, Object> stringObjectMap = BeanUtil.beanToMap(lmdbEnvSettings);
-        List<Map.Entry<String,String>> inserts = new ArrayList<>();
+        Map<String,List<String>> inserts = new HashMap<>();
         stringObjectMap.forEach(
-                (key,value)->{
-                    inserts.add(MapUtil.entry(lmdbEnvSettings.getEnvName()+"-"+key,value.toString()));
-                }
+                (key,value)-> inserts.put(lmdbEnvSettings.getEnvName()+"-"+key,Collections.singletonList(value.toString()))
         );
 
         //环境列表插入一个新的环境 这里要线程同步
@@ -72,9 +75,10 @@ public class MultipleLmdb {
             String s = mainDB.get(LMDB_ENVS_KEY);
             Type type = new TypeToken<Set<String>>(){}.getType();
             Set<String> list = gson.fromJson(s,type);
+            if (list == null) list = new HashSet<>();
             list.add(lmdbEnvSettings.getEnvName());
             String edited = gson.toJson(list);
-            inserts.add(MapUtil.entry(LMDB_ENVS_KEY,edited));
+            inserts.put(LMDB_ENVS_KEY,Collections.singletonList(edited));
         }
 
         mainDB.putAll(inserts);
@@ -87,12 +91,12 @@ public class MultipleLmdb {
      * @param isSortedDuplicated 是否支持Sorted重复键
      * @param dbName DB名称
      */
-    public static void writeDBsInfo(boolean isFixDuplicated,boolean isSortedDuplicated,String dbName){
+    public static void writeDBsInfo(boolean isFixDuplicated,boolean isSortedDuplicated,String dbName,String password){
         if (dbName.equals(LMDB_INFO_DB)) return;
-        List<Map.Entry<String,String>> inserts = new ArrayList<>();
-        inserts.add(MapUtil.entry(dbName + "-isFixDuplicated",isFixDuplicated?"1":"0"));
-        inserts.add(MapUtil.entry(dbName + "-isSortedDuplicated",isSortedDuplicated?"1":"0"));
-
+        Map<String,List<String>> inserts = new HashMap<>();
+        inserts.put(dbName + "-isFixDuplicated",Collections.singletonList(isFixDuplicated?"1":"0"));
+        inserts.put(dbName + "-isSortedDuplicated",Collections.singletonList(isSortedDuplicated?"1":"0"));
+        inserts.put(dbName + "-password",Collections.singletonList(password));
         mainDB.putAll(inserts);
     }
 
@@ -210,19 +214,23 @@ public class MultipleLmdb {
     }
 
     public static void checkAndExpand(Env<ByteBuffer> env, Object... objects){
-        //扩容逻辑 若容量占比超过80% 扩容
         long current = env.stat().pageSize * env.info().lastPageNumber;
-        long startTime = System.currentTimeMillis();
         long r = RamUsageEstimator.sizeOf(objects);
-        long endTime = System.currentTimeMillis();
-        long elapsedTime = endTime - startTime;
-
-        while (r + current > env.info().mapSize*0.8){
-            env.setMapSize(2*env.info().mapSize);
+        long expectedSize = env.info().mapSize;
+        if (r + current > expectedSize){
+            log.info("LMDB:current size is {}",current);
+            try(Txn<ByteBuffer> txn = env.txnWrite()){
+                while (r + current > expectedSize*0.5){
+                    expectedSize *= 2;
+                    log.info("purpose is {}",expectedSize);
+                }
+            }
+            env.setMapSize((expectedSize));
+            log.info("LMDB: Storage Expand Occurs,old capacity is {},new capacity is {}"
+                    ,current/(1024*1024),env.info().mapSize/(1024*1024));
         }
-        log.info("LMDB: Storage Expand Occurs,old capacity is {},new capacity is {}"
-                ,current/(1024*1024),env.info().mapSize/(1024*1024));
     }
+
 
 
 

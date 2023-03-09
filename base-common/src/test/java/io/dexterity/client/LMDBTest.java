@@ -28,9 +28,10 @@ public class LMDBTest {
                         false);
 
         for (int j = 0; j < 100; j++) {
-            List<Map.Entry<String,String>> testList = new ArrayList<>();
+            Map<String,List<String>> testList = new HashMap<>();
             for (int i = 0; i < 10000; i++) {
-                testList.add(new AbstractMap.SimpleEntry<>(String.valueOf(UUID.randomUUID()),"dasdweweqeqweqewq21321321"));
+                testList.put(String.valueOf(UUID.randomUUID()),
+                        Collections.singletonList("dasdweweqeqweqewq21321321"));
             }
             long startTime = System.currentTimeMillis();
             multipleDBi.putAll(testList);
@@ -62,14 +63,14 @@ public class LMDBTest {
 //                buildDBInstance("db-test", false,
 //                        true);
         MultipleDBi multipleDBi = multipleEnv.getLmdbMaps().get("db-test");
-        List<Map.Entry<String,String>> testList = new ArrayList<>();
+        Map<String,List<String>> testList = new HashMap<>();
         String key = UUID.randomUUID().toString();
         for (int i = 0; i < 100; i++) {
-            testList.add(new AbstractMap.SimpleEntry<>(key,UUID.randomUUID().toString()));
+            testList.put(key,Collections.singletonList(UUID.randomUUID().toString()));
         }
 
         for (int i = 0; i < 1000000; i++) {
-            testList.add(new AbstractMap.SimpleEntry<>(UUID.randomUUID().toString(),UUID.randomUUID().toString()));
+            testList.put(UUID.randomUUID().toString(),Collections.singletonList(UUID.randomUUID().toString()));
         }
 
         multipleDBi.putAll(testList);

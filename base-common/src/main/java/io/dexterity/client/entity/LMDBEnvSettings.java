@@ -13,4 +13,5 @@ public class LMDBEnvSettings {
     private int maxReaders;
     private String filePosition;
     private String envName;
+    private String secretKey = "ABC-CDQ-QDF-AZX-SDF";
 }

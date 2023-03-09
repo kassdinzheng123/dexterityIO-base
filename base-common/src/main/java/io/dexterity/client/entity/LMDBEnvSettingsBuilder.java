@@ -35,6 +35,11 @@ public class LMDBEnvSettingsBuilder {
         return this;
     }
 
+    public LMDBEnvSettingsBuilder secretKey(String secretKey){
+        this.lmdbEnvSettings.setSecretKey(secretKey);
+        return this;
+    }
+
     public LMDBEnvSettings build(){
         return lmdbEnvSettings;
     }
