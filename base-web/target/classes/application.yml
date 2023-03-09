@@ -1,9 +1,20 @@
+server:
+  port: 9090
+
 spring:
-  cache:
-    cache-names: LMDB-MD
-    caffeine:
-      spec: initialCapacity=100,maximumSize=500,expireAfterWrite=5s
-    type: caffeine
+  datasource:
+    dynamic:
+      primary: derby # 设置默认的数据源
+      strict: false # 严格匹配数据源，为true时，未匹配指定数据库抛出异常
+      datasource:
+        derby:
+          driver-class-name: org.apache.derby.iapi.jdbc.AutoloadedDriver
+          url: jdbc:derby:dexterityData;create=true
+        mysql:
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: jdbc:mysql://localhost:3306/swpu_oss_0.2?characterEncoding=utf-8&serverTimezone=UTC
+          username: root
+          password: 123456
   aop:
     auto: true
     proxy-target-class: true
@@ -12,18 +23,41 @@ jasypt:
     algorithm: PBEWithMD5AndDES
     password: TEST-SECRET-KEY
 
-jetcache:
-  statIntervalMinutes: 15
-  areaInCacheName: false
-  hidePackages: com.alibaba
-  local:
-    default:
-      type: caffeine
-      limit: 100
-      keyConvertor: fastjson2 #other choose：fastjson/jackson
-      expireAfterWriteInMillis: 100000
-    otherArea:
-      type: linkedhashmap
-      limit: 100
-      keyConvertor: none
-      expireAfterWriteInMillis: 100000
+mybatis-plus:
+  configuration:
+    # 驼峰转换
+    map-underscore-to-camel-case: true
+    # 是否开启二级缓存
+    cache-enabled: true
+    # 打印sql
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# springdoc-openapi项目配置
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+#    - group: 'default'
+#      paths-to-match: '/**'
+#      packages-to-scan: com.xiaominfo.knife4j.demo.web
+
+
+#jetcache:
+#  statIntervalMinutes: 15
+#  areaInCacheName: false
+#  hidePackages: com.alibaba
+#  local:
+#    default:
+#      type: caffeine
+#      limit: 100
+#      keyConvertor: fastjson2 #other choose：fastjson/jackson
+#      expireAfterWriteInMillis: 100000
+#    otherArea:
+#      type: linkedhashmap
+#      limit: 100
+#      keyConvertor: none
+#      expireAfterWriteInMillis: 100000

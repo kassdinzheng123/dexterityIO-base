@@ -1,7 +1,7 @@
 package io.dexterity.metadata.service;
 
-import io.dexterity.client.annotation.BucketName;
-import io.dexterity.metadata.entity.MetaData;
+import io.dexterity.common.client.annotation.BucketName;
+import io.dexterity.common.entity.MetaData;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

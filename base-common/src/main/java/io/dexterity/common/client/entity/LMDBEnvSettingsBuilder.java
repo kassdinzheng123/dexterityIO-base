@@ -1,4 +1,4 @@
-package io.dexterity.client.entity;
+package io.dexterity.common.client.entity;
 
 public class LMDBEnvSettingsBuilder {
     private final LMDBEnvSettings lmdbEnvSettings;

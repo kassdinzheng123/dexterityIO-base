@@ -1,4 +1,4 @@
-package io.dexterity.client.annotation;
+package io.dexterity.common.client.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

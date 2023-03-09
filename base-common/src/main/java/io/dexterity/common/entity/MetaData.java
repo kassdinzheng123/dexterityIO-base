@@ -1,19 +1,10 @@
-package io.dexterity.metadata.entity;
+package io.dexterity.common.entity;
 
-import cn.hutool.core.lang.hash.Hash;
-import io.dexterity.metadata.entity.constants.MetaDataConstants;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
-import static io.dexterity.metadata.entity.constants.MetaDataConstants.*;
-import static io.dexterity.metadata.entity.constants.MetaDataConstants.MIME;
+import static io.dexterity.common.entity.constants.MetaDataConstants.*;
+import static io.dexterity.common.entity.constants.MetaDataConstants.MIME;
 
 public class MetaData {
 

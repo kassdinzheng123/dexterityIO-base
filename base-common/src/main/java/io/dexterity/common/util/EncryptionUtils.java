@@ -1,4 +1,4 @@
-package io.dexterity.security.util;
+package io.dexterity.common.util;
 
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.jasypt.salt.StringFixedSaltGenerator;

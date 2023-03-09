@@ -1,18 +1,15 @@
 package io.dexterity;
 
-import com.alicp.jetcache.anno.config.EnableCreateCacheAnnotation;
-import com.alicp.jetcache.anno.config.EnableMethodCache;
 import lombok.extern.slf4j.Slf4j;
-import org.lmdbjava.Env;
-import org.springframework.boot.ExitCodeGenerator;
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-import static io.dexterity.client.MultipleLmdb.envs;
 
 @Slf4j
-@EnableMethodCache(basePackages = "io.dexterity")
+//@EnableMethodCache(basePackages = "io.dexterity")
 @SpringBootApplication(scanBasePackages = {"io.dexterity"})
+@MapperScan({"io.dexterity.bucket.dao"})
 public class DexterityIOEntrance {
     public static void main(String[] args) {
         SpringApplication.run(DexterityIOEntrance.class);

@@ -15,18 +15,13 @@ spring:
           url: jdbc:mysql://localhost:3306/swpu_oss_0.2?characterEncoding=utf-8&serverTimezone=UTC
           username: root
           password: 123456
-    cache:
-      cache-names: LMDB-MD
-      caffeine:
-        spec: initialCapacity=100,maximumSize=500,expireAfterWrite=5s
-      type: caffeine
-      aop:
-        auto: true
-        proxy-target-class: true
-    jasypt:
-      encryptor:
-        algorithm: PBEWithMD5AndDES
-        password: TEST-SECRET-KEY
+  aop:
+    auto: true
+    proxy-target-class: true
+jasypt:
+  encryptor:
+    algorithm: PBEWithMD5AndDES
+    password: TEST-SECRET-KEY
 
 mybatis-plus:
   configuration:
@@ -51,18 +46,18 @@ springdoc:
 #      packages-to-scan: com.xiaominfo.knife4j.demo.web
 
 
-jetcache:
-  statIntervalMinutes: 15
-  areaInCacheName: false
-  hidePackages: com.alibaba
-  local:
-    default:
-      type: caffeine
-      limit: 100
-      keyConvertor: fastjson2 #other choose：fastjson/jackson
-      expireAfterWriteInMillis: 100000
-    otherArea:
-      type: linkedhashmap
-      limit: 100
-      keyConvertor: none
-      expireAfterWriteInMillis: 100000
+#jetcache:
+#  statIntervalMinutes: 15
+#  areaInCacheName: false
+#  hidePackages: com.alibaba
+#  local:
+#    default:
+#      type: caffeine
+#      limit: 100
+#      keyConvertor: fastjson2 #other choose：fastjson/jackson
+#      expireAfterWriteInMillis: 100000
+#    otherArea:
+#      type: linkedhashmap
+#      limit: 100
+#      keyConvertor: none
+#      expireAfterWriteInMillis: 100000

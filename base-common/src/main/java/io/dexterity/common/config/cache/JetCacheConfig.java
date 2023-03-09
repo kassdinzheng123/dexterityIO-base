@@ -1,29 +1,19 @@
-package com.company.mypackage;
+package io.dexterity.common.config.cache;
+
+import com.alicp.jetcache.CacheBuilder;
+import com.alicp.jetcache.anno.CacheConsts;
+import com.alicp.jetcache.anno.config.EnableMethodCache;
+import com.alicp.jetcache.anno.support.GlobalCacheConfig;
+import com.alicp.jetcache.anno.support.JetCacheBaseBeans;
+import com.alicp.jetcache.embedded.LinkedHashMapCacheBuilder;
+import com.alicp.jetcache.support.FastjsonKeyConvertor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-import com.alicp.jetcache.CacheBuilder;
-import com.alicp.jetcache.anno.CacheConsts;
-import com.alicp.jetcache.anno.config.EnableCreateCacheAnnotation;
-import com.alicp.jetcache.anno.config.EnableMethodCache;
-import com.alicp.jetcache.anno.support.GlobalCacheConfig;
-import com.alicp.jetcache.anno.support.JetCacheBaseBeans;
-import com.alicp.jetcache.anno.support.SpringConfigProvider;
-import com.alicp.jetcache.embedded.EmbeddedCacheBuilder;
-import com.alicp.jetcache.embedded.LinkedHashMapCacheBuilder;
-import com.alicp.jetcache.redis.RedisCacheBuilder;
-import com.alicp.jetcache.support.Fastjson2KeyConvertor;
-import com.alicp.jetcache.support.FastjsonKeyConvertor;
-import com.alicp.jetcache.support.JavaValueDecoder;
-import com.alicp.jetcache.support.JavaValueEncoder;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
 
 @Configuration
 @EnableMethodCache(basePackages = "io.dexterity")

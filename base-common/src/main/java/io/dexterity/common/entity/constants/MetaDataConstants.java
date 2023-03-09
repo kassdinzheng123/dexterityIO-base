@@ -1,4 +1,4 @@
-package io.dexterity.metadata.entity.constants;
+package io.dexterity.common.entity.constants;
 
 public class MetaDataConstants {
     public static final String LMDB_METADATA_KEY = "meta-data";

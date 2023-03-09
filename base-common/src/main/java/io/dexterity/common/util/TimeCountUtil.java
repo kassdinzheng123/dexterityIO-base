@@ -1,4 +1,4 @@
-package io.dexterity.util;
+package io.dexterity.common.util;
 
 import lombok.extern.slf4j.Slf4j;
 

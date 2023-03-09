@@ -1,28 +1,21 @@
 package io.dexterity.client.impl;
 
-import ch.qos.logback.core.util.TimeUtil;
 import io.dexterity.DexterityIOEntrance;
 import io.dexterity.client.MultipleDBi;
 import io.dexterity.client.MultipleEnv;
 import io.dexterity.client.MultipleLmdb;
 import io.dexterity.client.entity.LMDBEnvSettings;
 import io.dexterity.client.entity.LMDBEnvSettingsBuilder;
-import io.dexterity.metadata.entity.MetaData;
+import io.dexterity.common.entity.MetaData;
 import io.dexterity.metadata.service.impl.LmdbMetaDataService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.lmdbjava.Env;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Bean;
 
 import java.util.*;
 
 import static io.dexterity.client.MultipleLmdb.envs;
-import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(classes = DexterityIOEntrance.class)
 @Slf4j

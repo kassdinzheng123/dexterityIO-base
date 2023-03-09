@@ -1,21 +1,18 @@
-package io.dexterity.client;
+package io.dexterity.common.client;
 
 import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.core.map.MapUtil;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import io.dexterity.client.entity.LMDBEnvSettings;
-import io.dexterity.client.entity.LMDBEnvSettingsBuilder;
+import io.dexterity.common.client.entity.LMDBEnvSettings;
+import io.dexterity.common.client.entity.LMDBEnvSettingsBuilder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.util.RamUsageEstimator;
 import org.lmdbjava.Env;
-import org.lmdbjava.EnvFlags;
 import org.lmdbjava.Txn;
-import org.rocksdb.Transaction;
 import org.springframework.stereotype.Component;
 
-import java.io.*;
+import java.io.File;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;

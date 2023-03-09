@@ -1,7 +1,6 @@
 package io.dexterity.metadata.service.impl;
 
 import cn.hutool.core.map.MapUtil;
-import cn.hutool.core.util.HashUtil;
 import io.dexterity.client.MultipleDBi;
 import io.dexterity.client.MultipleEnv;
 import io.dexterity.client.MultipleLmdb;
@@ -9,17 +8,15 @@ import io.dexterity.client.annotation.BucketName;
 import io.dexterity.client.annotation.LmdbRead;
 import io.dexterity.client.annotation.LmdbWrite;
 import io.dexterity.client.aspect.LmdbTxn;
-import io.dexterity.metadata.entity.MetaData;
-import io.dexterity.metadata.entity.constants.MetaDataConstants;
+import io.dexterity.common.entity.MetaData;
+import io.dexterity.common.entity.constants.MetaDataConstants;
 import io.dexterity.metadata.service.MetaDataService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.lmdbjava.Meta;
 import org.lmdbjava.Txn;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
-import java.lang.annotation.Target;
 import java.nio.ByteBuffer;
 import java.util.*;
 

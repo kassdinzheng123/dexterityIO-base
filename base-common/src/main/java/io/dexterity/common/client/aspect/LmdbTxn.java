@@ -1,9 +1,8 @@
-package io.dexterity.client.aspect;
+package io.dexterity.common.client.aspect;
 
-import cn.hutool.core.util.HashUtil;
-import io.dexterity.client.MultipleEnv;
-import io.dexterity.client.MultipleLmdb;
-import io.dexterity.client.annotation.BucketName;
+import io.dexterity.common.client.MultipleLmdb;
+import io.dexterity.common.client.annotation.BucketName;
+import io.dexterity.common.client.MultipleEnv;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -11,15 +10,12 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.lmdbjava.Env;
-import org.lmdbjava.Meta;
 import org.lmdbjava.Txn;
 import org.springframework.stereotype.Component;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 /**
  * 注意！只有在SpringBean中，这个方法的注解才生效
@@ -33,10 +29,10 @@ public class LmdbTxn {
     private final ThreadLocal<Txn<ByteBuffer>> txn = new ThreadLocal<>();
     private final ThreadLocal<MultipleEnv> env = new ThreadLocal<>();
 
-    @Pointcut("@annotation(io.dexterity.client.annotation.LmdbRead)")
+    @Pointcut("@annotation(io.dexterity.common.client.annotation.LmdbRead)")
     public void lmdbRead() {}
 
-    @Pointcut("@annotation(io.dexterity.client.annotation.LmdbWrite)")
+    @Pointcut("@annotation(io.dexterity.common.client.annotation.LmdbWrite)")
     public void lmdbWrite() {}
 
     @Around("lmdbRead()")
