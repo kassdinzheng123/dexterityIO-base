@@ -67,22 +67,22 @@ public class DerbyClient {
         DerbyClient client = new DerbyClient();
 
 //        client.deleteTable("BUCKET");
-        client.createTable(
-                "bucket",
-                "bucket_id INT PRIMARY KEY",
-                "bucket_name VARCHAR(255)",
-                "access_authority VARCHAR(255)",
-                "domain_name VARCHAR(255)",
-                "region VARCHAR(255)",
-                "status INT",
-                "tags VARCHAR(255)");
-        client.createTable(
-                "chunk_info",
-                "index INT PRIMARY KEY",
-                "chunk_total INT",
-                "chunk_size BIGINT",
-                "bucket_name VARCHAR(255)"
-        );
+//        client.createTable(
+//                "bucket",
+//                "bucket_id INT PRIMARY KEY",
+//                "bucket_name VARCHAR(255)",
+//                "access_authority VARCHAR(255)",
+//                "domain_name VARCHAR(255)",
+//                "region VARCHAR(255)",
+//                "status INT",
+//                "tags VARCHAR(255)");
+//        client.createTable(
+//                "chunk_info",
+//                "index INT PRIMARY KEY",
+//                "chunk_total INT",
+//                "chunk_size BIGINT",
+//                "bucket_name VARCHAR(255)"
+//        );
         client.listTable();
         client.close();
     }

@@ -1,7 +1,6 @@
 package io.dexterity.controller;
 
 import io.dexterity.BucketApi;
-import io.dexterity.StorageApi;
 import io.dexterity.po.pojo.R;
 import io.dexterity.po.vo.BucketVO;
 import io.dexterity.service.WebService;
@@ -23,8 +22,6 @@ import java.util.Objects;
 public class WebController {
     @Autowired
     private BucketApi bucketApi;
-    @Autowired
-    private StorageApi storageApi;
     @Autowired
     private WebService webService;
 
@@ -74,5 +71,20 @@ public class WebController {
         }
         data.put("index:",index);
         return new R<>(200,"请求成功",data);
+    }
+
+    @GetMapping("/object")
+    public R<?> getObjByBucket(
+            @RequestParam("bucketName") String bucketName
+    ) throws RocksDBException {
+        return new R<>(200,"请求成功",webService.getAllObj(bucketName));
+    }
+
+    @DeleteMapping("/object")
+    public R<?> deleteObjByBucket(
+            @RequestParam("bucketName") String bucketName,
+            @RequestParam("fileName") String fileName
+    ) throws RocksDBException {
+        return new R<>(200,"请求成功",webService.deleteObj(bucketName,fileName));
     }
 }
