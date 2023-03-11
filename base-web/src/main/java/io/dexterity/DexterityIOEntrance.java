@@ -1,15 +1,12 @@
 package io.dexterity;
 
 import lombok.extern.slf4j.Slf4j;
-import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-
 @Slf4j
 //@EnableMethodCache(basePackages = "io.dexterity")
-@SpringBootApplication(scanBasePackages = {"io.dexterity"})
-@MapperScan({"io.dexterity.bucket.dao"})
+@SpringBootApplication
 public class DexterityIOEntrance {
     public static void main(String[] args) {
         SpringApplication.run(DexterityIOEntrance.class);

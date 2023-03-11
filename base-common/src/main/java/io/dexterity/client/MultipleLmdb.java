@@ -1,10 +1,10 @@
-package io.dexterity.common.client;
+package io.dexterity.client;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import io.dexterity.common.client.entity.LMDBEnvSettings;
-import io.dexterity.common.client.entity.LMDBEnvSettingsBuilder;
+import io.dexterity.entity.LMDBEnvSettings;
+import io.dexterity.entity.LMDBEnvSettingsBuilder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.util.RamUsageEstimator;
@@ -137,7 +137,7 @@ public class MultipleLmdb {
                 .setMapSize(1024L*1024) // 容量为1MB
                 .setMaxDbs(1) // 数据库实例
                 .setMaxReaders(256) // 读事务
-                .open(new File("D:\\Resource\\lmdb"));
+                .open(new File("E:\\Resource\\lmdb"));
         MultipleEnv multipleEnv = new MultipleEnv("mainEnv", mainEnv);
         envs.put("mainEnv", multipleEnv);
         try {
@@ -190,7 +190,6 @@ public class MultipleLmdb {
         for (String dbName: collect) {
             initDBFromMainDB(multipleDBi,multipleEnv,dbName);
         }
-
     }
 
     /**
@@ -227,8 +226,4 @@ public class MultipleLmdb {
                     ,current/(1024*1024),env.info().mapSize/(1024*1024));
         }
     }
-
-
-
-
 }

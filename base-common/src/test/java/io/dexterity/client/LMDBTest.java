@@ -1,7 +1,7 @@
 package io.dexterity.client;
 
-import io.dexterity.client.entity.LMDBEnvSettings;
-import io.dexterity.client.entity.LMDBEnvSettingsBuilder;
+import io.dexterity.entity.LMDBEnvSettings;
+import io.dexterity.entity.LMDBEnvSettingsBuilder;
 import org.junit.jupiter.api.Test;
 import org.lmdbjava.Env;
 
@@ -18,7 +18,7 @@ public class LMDBTest {
                 .maxDBInstance(1)
                 .maxReaders(100)
                 .maxSize(1024 * 1024 * 1)
-                .filePosition("D:\\Resource\\lmdb-test").build();
+                .filePosition("E:\\Resource\\lmdb-test").build();
 
         MultipleEnv multipleEnv1 = MultipleLmdb.buildNewEnv(test);
         Env<ByteBuffer> env = multipleEnv1.getEnv();

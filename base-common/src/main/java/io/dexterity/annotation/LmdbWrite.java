@@ -1,12 +1,12 @@
-package io.dexterity.common.client.annotation;
+package io.dexterity.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target(ElementType.PARAMETER)
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface BucketName {
-    String value() default "";
+public @interface LmdbWrite {
+
 }

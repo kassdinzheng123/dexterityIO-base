@@ -1,4 +1,4 @@
-package io.dexterity.common.client.entity;
+package io.dexterity.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,10 +1,9 @@
-package io.dexterity.common.entity;
+package io.dexterity.entity;
+
+import io.dexterity.entity.constants.MetaDataConstants;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import static io.dexterity.common.entity.constants.MetaDataConstants.*;
-import static io.dexterity.common.entity.constants.MetaDataConstants.MIME;
 
 public class MetaData {
 
@@ -24,27 +23,27 @@ public class MetaData {
     }
 
     public String getCreateUTC() {
-        return metaDataMap.get(CREATED_UTC);
+        return metaDataMap.get(MetaDataConstants.CREATED_UTC);
     }
 
     public void setCreateUTC(String createUTC) {
-        metaDataMap.put(CREATED_UTC,createUTC);
+        metaDataMap.put(MetaDataConstants.CREATED_UTC,createUTC);
     }
 
     public String getUpdateUTC() {
-        return metaDataMap.get(UPDATE_UTC);
+        return metaDataMap.get(MetaDataConstants.UPDATE_UTC);
     }
 
     public void setUpdateUTC(String updateUTC) {
-        metaDataMap.put(UPDATE_UTC,updateUTC);
+        metaDataMap.put(MetaDataConstants.UPDATE_UTC,updateUTC);
     }
 
     public String getVersion() {
-        return metaDataMap.get(VERSION);
+        return metaDataMap.get(MetaDataConstants.VERSION);
     }
 
     public void setVersion(String version) {
-        metaDataMap.put(VERSION,version);
+        metaDataMap.put(MetaDataConstants.VERSION,version);
     }
 
     public String getSize() {
@@ -56,18 +55,18 @@ public class MetaData {
     }
 
     public String getCheckSum() {
-        return metaDataMap.get(CHECK_SUM);
+        return metaDataMap.get(MetaDataConstants.CHECK_SUM);
     }
 
     public void setCheckSum(String checkSum) {
-        metaDataMap.put(CHECK_SUM,checkSum);
+        metaDataMap.put(MetaDataConstants.CHECK_SUM,checkSum);
     }
 
     public String getMIME(){
-        return metaDataMap.get(MIME);
+        return metaDataMap.get(MetaDataConstants.MIME);
     }
 
     public void setMIME(String mime){
-        metaDataMap.put(MIME,mime);
+        metaDataMap.put(MetaDataConstants.MIME,mime);
     }
 }

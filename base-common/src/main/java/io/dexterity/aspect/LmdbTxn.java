@@ -1,8 +1,8 @@
-package io.dexterity.common.client.aspect;
+package io.dexterity.aspect;
 
-import io.dexterity.common.client.MultipleLmdb;
-import io.dexterity.common.client.annotation.BucketName;
-import io.dexterity.common.client.MultipleEnv;
+import io.dexterity.annotation.BucketName;
+import io.dexterity.client.MultipleLmdb;
+import io.dexterity.client.MultipleEnv;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -29,10 +29,10 @@ public class LmdbTxn {
     private final ThreadLocal<Txn<ByteBuffer>> txn = new ThreadLocal<>();
     private final ThreadLocal<MultipleEnv> env = new ThreadLocal<>();
 
-    @Pointcut("@annotation(io.dexterity.common.client.annotation.LmdbRead)")
+    @Pointcut("@annotation(io.dexterity.annotation.LmdbRead)")
     public void lmdbRead() {}
 
-    @Pointcut("@annotation(io.dexterity.common.client.annotation.LmdbWrite)")
+    @Pointcut("@annotation(io.dexterity.annotation.LmdbWrite)")
     public void lmdbWrite() {}
 
     @Around("lmdbRead()")

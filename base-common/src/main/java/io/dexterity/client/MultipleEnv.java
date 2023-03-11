@@ -1,8 +1,8 @@
-package io.dexterity.common.client;
+package io.dexterity.client;
 
 import com.alicp.jetcache.Cache;
 import com.alicp.jetcache.embedded.CaffeineCacheBuilder;
-import io.dexterity.common.client.exception.LMDBCommonException;
+import io.dexterity.exception.LMDBCommonException;
 import lombok.Getter;
 import lombok.Setter;
 import org.lmdbjava.Dbi;

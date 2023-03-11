@@ -4,9 +4,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.example</groupId>
+        <groupId>io.dexterity</groupId>
         <artifactId>dexterity-io-base</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0</version>
     </parent>
 
     <artifactId>base-common</artifactId>
@@ -22,19 +22,23 @@
             <groupId>org.lmdbjava</groupId>
             <artifactId>lmdbjava</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-core</artifactId>
         </dependency>
+
         <!-- https://mvnrepository.com/artifact/org.lmdbjava/lmdbjava -->
         <dependency>
             <groupId>org.rocksdb</groupId>
             <artifactId>rocksdbjni</artifactId>
         </dependency>
+
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.aspectj</groupId>
             <artifactId>aspectjrt</artifactId>
@@ -47,19 +51,17 @@
             <version>RELEASE</version>
             <scope>compile</scope>
         </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>RELEASE</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.apache.derby</groupId>
             <artifactId>derby</artifactId>
         </dependency>
-
-
     </dependencies>
-
-
 </project>

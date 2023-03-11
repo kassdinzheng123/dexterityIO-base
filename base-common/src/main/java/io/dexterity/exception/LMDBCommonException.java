@@ -1,4 +1,4 @@
-package io.dexterity.common.client.exception;
+package io.dexterity.exception;
 
 import lombok.extern.slf4j.Slf4j;
 

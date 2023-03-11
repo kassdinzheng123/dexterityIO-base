@@ -2,9 +2,11 @@
 /base-common/target/
 /base-core/core-bucket/target/
 /base-core/core-service/target/
+/base-core/core-storage-engine/target/
+/base-core/core-metadata/target/
 /base-web/target/
 
 /dexterity-io-base.iml
 /derby.log
 /base-web/derby.log
-/base-core/core-storage-engine/target/
+

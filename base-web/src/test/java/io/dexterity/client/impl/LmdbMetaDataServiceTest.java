@@ -1,21 +1,18 @@
 package io.dexterity.client.impl;
 
 import io.dexterity.DexterityIOEntrance;
-import io.dexterity.client.MultipleDBi;
 import io.dexterity.client.MultipleEnv;
 import io.dexterity.client.MultipleLmdb;
-import io.dexterity.client.entity.LMDBEnvSettings;
-import io.dexterity.client.entity.LMDBEnvSettingsBuilder;
-import io.dexterity.common.entity.MetaData;
-import io.dexterity.metadata.service.impl.LmdbMetaDataService;
+import io.dexterity.entity.LMDBEnvSettings;
+import io.dexterity.entity.LMDBEnvSettingsBuilder;
+import io.dexterity.entity.MetaData;
+import io.dexterity.service.impl.LmdbMetaDataService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.*;
-
-import static io.dexterity.client.MultipleLmdb.envs;
 
 @SpringBootTest(classes = DexterityIOEntrance.class)
 @Slf4j
@@ -31,7 +28,7 @@ class LmdbMetaDataServiceTest {
                 .maxReaders(100)
                 .maxSize(1024 * 1024 * 5)
                 .maxDBInstance(30)
-                .filePosition("D:\\Resource\\metadata-test")
+                .filePosition("E:\\Resource\\metadata-test")
                 .build();
         MultipleEnv multipleEnv = MultipleLmdb.buildNewEnv(settings);
     }

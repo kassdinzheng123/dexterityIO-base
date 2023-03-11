@@ -1,10 +1,10 @@
-package io.dexterity.common.client;
+package io.dexterity.client;
 
 import com.alicp.jetcache.Cache;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import io.dexterity.common.client.exception.LMDBCommonException;
-import io.dexterity.common.util.EncryptionUtils;
+import io.dexterity.exception.LMDBCommonException;
+import io.dexterity.util.EncryptionUtils;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
