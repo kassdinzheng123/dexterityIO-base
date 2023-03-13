@@ -4,6 +4,7 @@ import io.dexterity.client.RocksDBClient;
 import io.dexterity.po.vo.RocksDBVo;
 import io.dexterity.service.StorageService;
 import org.rocksdb.RocksDBException;
+import org.rocksdb.RocksIterator;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -14,6 +15,11 @@ public class StorageServiceImpl implements StorageService {
     public int cfAdd(String cfName) throws RocksDBException {
         RocksDBClient.cfAddIfNotExist(cfName);
         return 1;
+    }
+
+    @Override
+    public RocksIterator getIterator(String chunkTmp) throws RocksDBException {
+        return RocksDBClient.getIterator(chunkTmp);
     }
 
     public int cfDelete(String cfName) throws RocksDBException {

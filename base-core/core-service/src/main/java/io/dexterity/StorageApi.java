@@ -2,6 +2,7 @@ package io.dexterity;
 
 import io.dexterity.po.vo.RocksDBVo;
 import org.rocksdb.RocksDBException;
+import org.rocksdb.RocksIterator;
 
 import java.util.List;
 import java.util.Set;
@@ -18,4 +19,6 @@ public interface StorageApi {
     Set<String> cfAll();
     int cfDelete(String cfName) throws RocksDBException;
     int cfAdd(String cfName) throws RocksDBException;
+
+    RocksIterator getIterator(String chunkTmp) throws RocksDBException;
 }

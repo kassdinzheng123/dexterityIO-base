@@ -64,6 +64,7 @@ public class WebController {
         log.info("当前分片:"+index +" ,总分片数:"+chunkTotal+" ,文件名:"+fileName);
         if(webService.checkChunkAll()==chunkTotal){
             byte[] mergeBytes = webService.mergeChunk();//合并文件
+            log.info("总校验和："+FileUtil.getMd5(mergeBytes));
             if(!Objects.equals(FileUtil.getMd5(mergeBytes), md5)){
                 data.put("info","md5值校验不一致!");
                 return new R<>(200,"请求成功",data);

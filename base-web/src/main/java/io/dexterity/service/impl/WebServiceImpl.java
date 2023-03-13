@@ -8,21 +8,22 @@ import io.dexterity.dao.WebDao;
 import io.dexterity.po.vo.ChunkVO;
 import io.dexterity.po.vo.RocksDBVo;
 import io.dexterity.service.WebService;
+import lombok.extern.slf4j.Slf4j;
 import org.rocksdb.RocksDBException;
+import org.rocksdb.RocksIterator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
 @Service
+@Slf4j
 public class WebServiceImpl extends ServiceImpl<WebDao, ChunkVO> implements WebService {
     @Autowired
     private StorageApi storageApi;
@@ -45,19 +46,38 @@ public class WebServiceImpl extends ServiceImpl<WebDao, ChunkVO> implements WebS
     }
 
     @Override
-    public byte[] mergeChunk() throws RocksDBException, IOException {
-        List<RocksDBVo> rocksDBVos = storageApi.getAll("chunkTmp");
-        rocksDBVos.sort(Comparator.comparingInt(o -> ByteBuffer.wrap(o.getKey()).getInt()));
+    public byte[] mergeChunk() throws RocksDBException {
+//        List<RocksDBVo> rocksDBVos = storageApi.getAll("chunkTmp");
+//        rocksDBVos.sort(Comparator.comparingInt(o -> ByteBuffer.wrap(o.getKey()).getInt()));
+//        log.info("Success Sort!");
+//        try {
+//            ByteArrayOutputStream out = new ByteArrayOutputStream();
+//            for(RocksDBVo rocksDBVo:rocksDBVos){
+//                byte[] value = rocksDBVo.getValue();
+//                out.write(value);
+//            }
+//            log.info("Success Merge!");
+//            return out.toByteArray();
+//        } catch (IOException e) {
+//            // 异常处理
+//            throw new RuntimeException("Failed to merge data", e);
+//        }
+        RocksIterator iterator = storageApi.getIterator("chunkTmp");
+        iterator.seekToFirst();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            for(RocksDBVo rocksDBVo:rocksDBVos){
-                byte[] value = rocksDBVo.getValue();
+            while (iterator.isValid()) {
+                byte[] value = storageApi.get("chunkTmp",iterator.key()).getValue();
                 out.write(value);
+                iterator.next();
             }
+            log.info("Success Merge!");
             return out.toByteArray();
         } catch (IOException e) {
             // 异常处理
             throw new RuntimeException("Failed to merge data", e);
+        } finally {
+            iterator.close();
         }
     }
 

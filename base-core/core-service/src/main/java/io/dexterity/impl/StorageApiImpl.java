@@ -4,6 +4,7 @@ import io.dexterity.StorageApi;
 import io.dexterity.po.vo.RocksDBVo;
 import io.dexterity.service.StorageService;
 import org.rocksdb.RocksDBException;
+import org.rocksdb.RocksIterator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -66,5 +67,10 @@ public class StorageApiImpl implements StorageApi {
     @Override
     public int cfAdd(String cfName) throws RocksDBException {
         return storageService.cfAdd(cfName);
+    }
+
+    @Override
+    public RocksIterator getIterator(String chunkTmp) throws RocksDBException {
+        return storageService.getIterator(chunkTmp);
     }
 }

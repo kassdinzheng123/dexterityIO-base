@@ -217,5 +217,14 @@ public class RocksDBClient {
         }
         return count;
     }
+
+    public static RocksIterator getIterator(String columnFamily) throws RocksDBException {
+        ColumnFamilyHandle columnFamilyHandle = cfAddIfNotExist(columnFamily);
+        if (columnFamilyHandle == null) {
+            throw new IllegalArgumentException("Invalid column family: " + columnFamily);
+        }
+        return rocksDB.newIterator(columnFamilyHandle);
+    }
+
 }
 

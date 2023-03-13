@@ -12,10 +12,15 @@ public class DerbyClient {
     }
 
     /**
-     * 查询该表所有的信息
+     * 查询总条数
      */
-    public ResultSet select(String tableName) throws SQLException {
-        return stmt.executeQuery("SELECT * FROM " + tableName);
+    public int selectCount(String tableName) throws SQLException {
+        int count = 0;
+        ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM " + tableName);
+        if (rs.next()) {
+            count = rs.getInt(1);
+        }
+        return count;
     }
 
     /**
