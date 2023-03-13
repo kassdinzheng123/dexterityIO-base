@@ -15,9 +15,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,7 +51,7 @@ public class WebServiceImpl extends ServiceImpl<WebDao, ChunkVO> implements WebS
     }
 
     @Override
-    public byte[] mergeChunk() throws RocksDBException {
+    public byte[] mergeChunk() throws RocksDBException, IOException {
 //        List<RocksDBVo> rocksDBVos = storageApi.getAll("chunkTmp");
 //        rocksDBVos.sort(Comparator.comparingInt(o -> ByteBuffer.wrap(o.getKey()).getInt()));
 //        log.info("Success Sort!");
@@ -62,23 +67,46 @@ public class WebServiceImpl extends ServiceImpl<WebDao, ChunkVO> implements WebS
 //            // 异常处理
 //            throw new RuntimeException("Failed to merge data", e);
 //        }
+
+//        RocksIterator iterator = storageApi.getIterator("chunkTmp");
+//        iterator.seekToFirst();
+//        ByteArrayOutputStream out = new ByteArrayOutputStream();
+//        try {
+//            while (iterator.isValid()) {
+//                byte[] value = storageApi.get("chunkTmp",iterator.key()).getValue();
+//                out.write(value);
+//                iterator.next();
+//            }
+//            log.info("Success Merge!");
+//            return out.toByteArray();
+//        } catch (IOException e) {
+//            // 异常处理
+//            throw new RuntimeException("Failed to merge data", e);
+//        } finally {
+//            iterator.close();
+//        }
         RocksIterator iterator = storageApi.getIterator("chunkTmp");
         iterator.seekToFirst();
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try {
+        String tempDir = System.getenv("TEMP"); // 获取临时目录的路径
+        Path tempFile = Files.createTempFile(Paths.get(tempDir), "merged", ".dat"); // 创建临时文件
+        try (FileChannel channel = FileChannel.open(tempFile, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
             while (iterator.isValid()) {
-                byte[] value = storageApi.get("chunkTmp",iterator.key()).getValue();
-                out.write(value);
+                byte[] value = storageApi.get("chunkTmp", iterator.key()).getValue();
+                ByteBuffer buffer = ByteBuffer.wrap(value);
+                channel.write(buffer); // 将块写入临时文件中
                 iterator.next();
             }
-            log.info("Success Merge!");
-            return out.toByteArray();
-        } catch (IOException e) {
-            // 异常处理
-            throw new RuntimeException("Failed to merge data", e);
-        } finally {
-            iterator.close();
         }
+        byte[] mergedData = null;
+        try (FileChannel channel = FileChannel.open(tempFile, StandardOpenOption.READ)) {
+            int size = (int) channel.size();
+            ByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, size); // 内存映射文件
+            mergedData = new byte[size];
+            buffer.get(mergedData); // 将文件转换成字节数组
+        }
+        log.info("Success Merge!");
+        Files.delete(tempFile); // 删除临时文件
+        return mergedData;
     }
 
     @Override
