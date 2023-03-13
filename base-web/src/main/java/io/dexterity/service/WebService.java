@@ -2,7 +2,6 @@ package io.dexterity.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import io.dexterity.po.vo.ChunkVO;
-import io.dexterity.po.vo.RocksDBVo;
 import org.rocksdb.RocksDBException;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -16,9 +15,13 @@ public interface WebService extends IService<ChunkVO> {
 
     byte[] mergeChunk() throws RocksDBException, IOException;
 
-    int saveObject(byte[] object,String bucketName,String fileName) throws RocksDBException;
+    int saveObject(byte[] object,String bucketName,String fileName,String md5,Long fileSize) throws RocksDBException;
 
     List<String> getAllObj(String bucketName) throws RocksDBException;
 
-    RocksDBVo deleteObj(String bucketName, String fileName) throws RocksDBException;
+    int deleteObj(String bucketName, String fileName) throws RocksDBException;
+
+    Boolean findObjByMD5(String md5);
+
+    List<Integer> findChunkListByMD5(String md5);
 }

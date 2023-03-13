@@ -1,10 +1,9 @@
 package io.dexterity;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@Slf4j
+//@Slf4j
 //@EnableMethodCache(basePackages = "io.dexterity")
 @SpringBootApplication
 public class DexterityIOEntrance {
@@ -12,8 +11,8 @@ public class DexterityIOEntrance {
         SpringApplication.run(DexterityIOEntrance.class);
     }
 
-    /**
-     * 应用关闭前关闭一切Env
+    /*
+      应用关闭前关闭一切Env
      */
 //    private void envDestroy(){
 //        envs.forEach(

@@ -5,6 +5,8 @@ import io.dexterity.po.pojo.R;
 import io.dexterity.po.vo.BucketVO;
 import io.dexterity.service.WebService;
 import io.dexterity.utils.FileUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,12 +15,13 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
+@Slf4j
 @RestController
 @RequestMapping("/web")
-@Slf4j
+@Tag(name = "服务端",description = "暂无描述")
 public class WebController {
     @Autowired
     private BucketApi bucketApi;
@@ -45,7 +48,7 @@ public class WebController {
                                   @RequestParam("status")Integer status){
         return new R<>(200,"请求成功",bucketApi.updateStatusBucket(bucketId,status));
     }
-    @PutMapping("/object")
+    @PostMapping("/object")
     public R<?> uploadToBucket(
             @RequestParam("chunk") MultipartFile chunk,//块的数据
             @RequestParam("md5") String md5,//文件的md5值
@@ -65,7 +68,7 @@ public class WebController {
                 data.put("info","md5值校验不一致!");
                 return new R<>(200,"请求成功",data);
             }
-            webService.saveObject(mergeBytes,bucketName,fileName);//保存对象信息到rocksdb，并删除临时文件
+            webService.saveObject(mergeBytes,bucketName,fileName,md5,fileSize);//保存对象信息到rocksdb，并删除临时文件
             data.put("info:","文件上传成功");
             return new R<>(200,"请求成功",data);
         }
@@ -73,11 +76,43 @@ public class WebController {
         return new R<>(200,"请求成功",data);
     }
 
+    @Operation(summary = "查询某存储桶中的对象列表", description = "查询已上传的对象列表")
     @GetMapping("/object")
     public R<?> getObjByBucket(
             @RequestParam("bucketName") String bucketName
     ) throws RocksDBException {
         return new R<>(200,"请求成功",webService.getAllObj(bucketName));
+    }
+
+    @Operation(summary = "检查对象是否上传", description = "根据前端传来的MD5查询该对象是否已上传")
+    @GetMapping("/object/check")
+    public R<?> checkObject(@RequestParam("md5") String md5){
+        log.info("对象MD5:"+md5);
+        // 首先检查对象是否存在 TODO lmdb去查是否存在元数据，先默认为false
+        Boolean isUploaded = webService.findObjByMD5(md5);
+
+        // 定义一个返回值集合
+        Map<String, Object> data = new HashMap<>();
+        data.put("isUploaded",isUploaded);
+
+        // 有，则执行秒传
+        if(isUploaded){
+            data.put("info","执行秒传");
+            return new R<>(200,"请求成功",data);
+        }
+        // 没有，则查询是否存在分片信息并返回给前端（交给前端判断）
+        // 若存在分片，则执行断点续传
+        // 若不存在分片，则按照正常上传
+        //TODO 先默认chunkList为空
+        List<Integer> chunkList = webService.findChunkListByMD5(md5);
+        if(chunkList.size()!=0){
+            data.put("chunkList",chunkList);
+            data.put("info","执行断点续传");
+            return  new R<>(200,"请求成功",data);
+        }
+        data.put("chunkList",chunkList);
+        data.put("info","执行正常上传");
+        return  new R<>(200,"请求成功",data);
     }
 
     @DeleteMapping("/object")

@@ -1,5 +1,6 @@
 package io.dexterity;
 
+import io.dexterity.dao.WebDao;
 import io.dexterity.service.WebService;
 import org.junit.jupiter.api.Test;
 import org.rocksdb.RocksDBException;
@@ -13,7 +14,8 @@ import java.io.IOException;
 public class WebTest {
     @Autowired
     private StorageApi storageApi;
-
+    @Autowired
+    private WebDao webDao;
     @Autowired
     private WebService webService;
     @Test
@@ -26,5 +28,13 @@ public class WebTest {
         byte[] content = "test file content".getBytes();
         MockMultipartFile file = new MockMultipartFile("test.txt", "test.txt", "text/plain", content);
         webService.saveChunk(file,1,1,10485760L,"bucket");
+    }
+
+    @Test
+    public void test3() throws RocksDBException {
+        //删除rocksdb中的临时列族,chunkTmp
+        storageApi.cfDelete("chunkTmp");
+        //删除derby中的临时信息,CHUNK_INFO
+        webDao.deleteChunkTemp();
     }
 }

@@ -29,5 +29,11 @@
             <artifactId>core-storage-engine</artifactId>
             <version>1.0</version>
         </dependency>
+
+        <dependency>
+            <groupId>io.dexterity</groupId>
+            <artifactId>core-metadata</artifactId>
+            <version>1.0</version>
+        </dependency>
     </dependencies>
 </project>

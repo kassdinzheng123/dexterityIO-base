@@ -15,6 +15,10 @@ spring:
           url: jdbc:mysql://localhost:3306/swpu_oss_0.2?characterEncoding=utf-8&serverTimezone=UTC
           username: root
           password: 123456
+  servlet:
+    multipart:
+      max-file-size: 100MB # 配置单个上传文件的大小的限制
+      max-request-size: 200MB # 配置在一次请求中上传文件的总容量的限制
   aop:
     auto: true
     proxy-target-class: true

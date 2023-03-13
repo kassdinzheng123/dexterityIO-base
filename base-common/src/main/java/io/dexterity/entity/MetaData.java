@@ -14,6 +14,11 @@ public class MetaData {
         metaDataMap = new HashMap<>();
     }
 
+    public MetaData(String key, HashMap<String, String> metaDataMap) {
+        this.key=key;
+        this.metaDataMap = metaDataMap;
+    }
+
     private String getMetaData(String metaData){
         return metaDataMap.get(metaData);
     }
