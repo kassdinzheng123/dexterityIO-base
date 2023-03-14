@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Data
 public class LMDBEnvSettings {
-    private int maxSize;
+    private Long maxSize;
     private int maxDBInstance;
     private int maxReaders;
     private String filePosition;

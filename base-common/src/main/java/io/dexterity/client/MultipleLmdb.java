@@ -1,10 +1,10 @@
-package io.dexterity.client;
+package io.dexterity.common.client;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import io.dexterity.entity.LMDBEnvSettings;
-import io.dexterity.entity.LMDBEnvSettingsBuilder;
+import io.dexterity.common.client.entity.LMDBEnvSettings;
+import io.dexterity.common.client.entity.LMDBEnvSettingsBuilder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.util.RamUsageEstimator;
@@ -80,6 +80,8 @@ public class MultipleLmdb {
 
         mainDB.putAll(inserts);
 
+        System.out.println(mainDB.getAll());
+
     }
 
     /**
@@ -135,9 +137,9 @@ public class MultipleLmdb {
         //初始化 mainEnv
         mainEnv = Env.create()
                 .setMapSize(1024L*1024) // 容量为1MB
-                .setMaxDbs(1) // 数据库实例
+                .setMaxDbs(10) // 数据库实例
                 .setMaxReaders(256) // 读事务
-                .open(new File("E:\\Resource\\lmdb"));
+                .open(new File("D:\\Resource\\lmdb"));
         MultipleEnv multipleEnv = new MultipleEnv("mainEnv", mainEnv);
         envs.put("mainEnv", multipleEnv);
         try {
@@ -158,6 +160,7 @@ public class MultipleLmdb {
                 mainDB.put(LMDB_ENVS_KEY,gson.toJson(Collections.emptyList()));
             }
         } catch (MultipleEnv.LMDBCreateFailedException e) {
+            e.printStackTrace();
             log.error("LMDB init failed: lmdb-info db not correctly created");
             System.exit(-1);
         }
@@ -177,7 +180,7 @@ public class MultipleLmdb {
                 .envName(envName)
                 .filePosition(patch.get(envName + "-filePosition"))
                 .maxDBInstance(Integer.parseInt(patch.get(envName + "-maxDBInstance")))
-                .maxSize(Integer.parseInt(patch.get(envName + "-maxSize")))
+                .maxSize(Long.parseLong(patch.get(envName + "-maxSize")))
                 .maxReaders(Integer.parseInt(patch.get(envName + "-maxReaders")))
                 .build();
         MultipleEnv multipleEnv = buildNewEnv(settings);
@@ -190,6 +193,7 @@ public class MultipleLmdb {
         for (String dbName: collect) {
             initDBFromMainDB(multipleDBi,multipleEnv,dbName);
         }
+
     }
 
     /**
@@ -209,21 +213,54 @@ public class MultipleLmdb {
         }
     }
 
-    public static void checkAndExpand(Env<ByteBuffer> env, Object... objects){
+    public static void checkAndExpand(String envName, Object... objects){
+
+        log.info("LMDB: start expand check");
+
+        MultipleEnv multipleEnv = envs.get(envName);
+        if (multipleEnv == null) return;
+        Env<ByteBuffer> env = multipleEnv.getEnv();
+
         long current = env.stat().pageSize * env.info().lastPageNumber;
         long r = RamUsageEstimator.sizeOf(objects);
         long expectedSize = env.info().mapSize;
-        if (r + current > expectedSize){
-            log.info("LMDB:current size is {}",current);
-            try(Txn<ByteBuffer> txn = env.txnWrite()){
-                while (r + current > expectedSize*0.5){
-                    expectedSize *= 2;
-                    log.info("purpose is {}",expectedSize);
-                }
-            }
-            env.setMapSize((expectedSize));
-            log.info("LMDB: Storage Expand Occurs,old capacity is {},new capacity is {}"
-                    ,current/(1024*1024),env.info().mapSize/(1024*1024));
+        log.info("LMDB:current size is {}",current);
+        while (r*10 + current > expectedSize*0.8){
+            expectedSize *= 2;
+            log.info("LMDB: purpose is {}",expectedSize);
         }
+
+        env.setMapSize(expectedSize);
+
+        mainDB.put(envName + "-maxSize", String.valueOf(expectedSize));
+
+        log.info("LMDB: Storage Expand Occurs,old capacity is {},new capacity is {}"
+                    ,current/(1024*1024),env.info().mapSize/(1024*1024));
+
+
     }
+
+    public static void checkAndReduce(String envName){
+
+        log.info("LMDB: start reduce check");
+
+        MultipleEnv multipleEnv = envs.get(envName);
+        if (multipleEnv == null) return;
+        Env<ByteBuffer> env = multipleEnv.getEnv();
+
+
+        long current = env.stat().pageSize * env.info().lastPageNumber;
+        log.info("LMDB: current size is {}",current);
+        env.setMapSize((long) (current*1.5));
+
+        mainDB.put(envName + "-maxSize", String.valueOf((long) (current*1.5)));
+
+        log.info("LMDB: Storage Reduce Occurs,old capacity is {},new capacity is {}",
+                env.info().mapSize/(1024*1024),current*1.5/(1024*1024));
+
+
+    }
+
+
+
 }

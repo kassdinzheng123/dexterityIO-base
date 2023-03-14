@@ -120,8 +120,13 @@ public class MultipleEnv {
             lmdbMaps.put(dbName, multipleDBi);
             return multipleDBi;
         }catch (Exception e) {
+            e.printStackTrace();
             throw new LMDBCreateFailedException(e);
         }
+    }
+
+    public MultipleDBi getDB(String dbKey){
+        return this.lmdbMaps.get(dbKey);
     }
 
 
