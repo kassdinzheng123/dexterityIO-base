@@ -1,15 +1,14 @@
-package io.dexterity.common.client;
+package io.dexterity.client;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import io.dexterity.common.client.entity.LMDBEnvSettings;
-import io.dexterity.common.client.entity.LMDBEnvSettingsBuilder;
+import io.dexterity.entity.LMDBEnvSettings;
+import io.dexterity.entity.LMDBEnvSettingsBuilder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.util.RamUsageEstimator;
 import org.lmdbjava.Env;
-import org.lmdbjava.Txn;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -201,7 +200,7 @@ public class MultipleLmdb {
      * @param multipleDBi lmdb客户端
      * @param dbName dbName
      */
-    private static void initDBFromMainDB(MultipleDBi multipleDBi,MultipleEnv multipleEnv, String dbName){
+    private static void initDBFromMainDB(MultipleDBi multipleDBi, MultipleEnv multipleEnv, String dbName){
         Map<String,String> patch = multipleDBi.getPatch((dbName + "-isFixDuplicated"),
                 (dbName + "-isSortedDuplicated"));
         String isSortedDuplicated = patch.get(dbName + "-isSortedDuplicated");

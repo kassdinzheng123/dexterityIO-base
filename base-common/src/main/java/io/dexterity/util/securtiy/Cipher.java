@@ -1,4 +1,4 @@
-package io.dexterity.common.util.securtiy;
+package io.dexterity.util.securtiy;
 
 /**
  * General interface for OPE ciphers.

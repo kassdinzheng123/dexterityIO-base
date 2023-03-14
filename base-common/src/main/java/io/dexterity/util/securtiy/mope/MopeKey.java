@@ -1,10 +1,10 @@
-package io.dexterity.common.util.securtiy.mope;
+package io.dexterity.util.securtiy.mope;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
-import io.dexterity.common.util.securtiy.Key;
-import io.dexterity.common.util.securtiy.OpeException;
+import io.dexterity.util.securtiy.Key;
+import io.dexterity.util.securtiy.OpeException;
 
 /**
  * Key implementation of Boldyreva et al's Modular Order-Preserving Encryption scheme.

@@ -1,12 +1,12 @@
 package io.dexterity.client.impl;
 
+import io.dexterity.service.impl.LmdbMetaDataService;
 import io.dexterity.DexterityIOEntrance;
-import io.dexterity.common.client.MultipleEnv;
-import io.dexterity.common.client.MultipleLmdb;
-import io.dexterity.common.client.entity.LMDBEnvSettings;
-import io.dexterity.common.client.entity.LMDBEnvSettingsBuilder;
-import io.dexterity.common.entity.MetaData;
-import io.dexterity.metadata.service.impl.LmdbMetaDataService;
+import io.dexterity.client.MultipleEnv;
+import io.dexterity.client.MultipleLmdb;
+import io.dexterity.entity.LMDBEnvSettings;
+import io.dexterity.entity.LMDBEnvSettingsBuilder;
+import io.dexterity.entity.MetaData;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;

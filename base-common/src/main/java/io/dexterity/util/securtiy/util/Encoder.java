@@ -1,10 +1,10 @@
-package io.dexterity.common.util.securtiy.util;
+package io.dexterity.util.securtiy.util;
+
+import io.dexterity.util.securtiy.OpeException;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-
-import io.dexterity.common.util.securtiy.OpeException;
 
 /**
  * This class is used for encoding Java primitive types and strings using

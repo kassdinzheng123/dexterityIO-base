@@ -1,12 +1,12 @@
-package io.dexterity.common.util.securtiy.fast;
+package io.dexterity.util.securtiy.fast;
+
+import io.dexterity.util.securtiy.Cipher;
+import io.dexterity.util.securtiy.Key;
+import io.dexterity.util.securtiy.OpeException;
+import lombok.extern.slf4j.Slf4j;
 
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
-
-import io.dexterity.common.util.securtiy.Cipher;
-import io.dexterity.common.util.securtiy.Key;
-import io.dexterity.common.util.securtiy.OpeException;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * Cipher implementation of Hwang et al's Fast Order-Preserving Encryption scheme.

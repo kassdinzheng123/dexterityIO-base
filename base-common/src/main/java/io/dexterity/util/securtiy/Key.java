@@ -1,6 +1,6 @@
-package io.dexterity.common.util.securtiy;
+package io.dexterity.util.securtiy;
 
-import io.dexterity.common.util.securtiy.util.Encoder;
+import io.dexterity.util.securtiy.util.Encoder;
 
 /**
  * General interface for OPE key.

@@ -1,12 +1,12 @@
-package io.dexterity.common.util.securtiy.fast;
+package io.dexterity.util.securtiy.fast;
+
+import io.dexterity.util.securtiy.Key;
+import io.dexterity.util.securtiy.OpeException;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
-
-import io.dexterity.common.util.securtiy.Key;
-import io.dexterity.common.util.securtiy.OpeException;
 
 /**
  * Key implementation of Hwang et al's Fast Order-Preserving Encryption scheme.
