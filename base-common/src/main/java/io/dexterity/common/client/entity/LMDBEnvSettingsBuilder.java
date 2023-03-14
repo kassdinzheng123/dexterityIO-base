@@ -10,7 +10,7 @@ public class LMDBEnvSettingsBuilder {
         return new LMDBEnvSettingsBuilder(new LMDBEnvSettings());
     }
 
-    public LMDBEnvSettingsBuilder maxSize(int maxSize){
+    public LMDBEnvSettingsBuilder maxSize(Long maxSize){
         this.lmdbEnvSettings.setMaxSize(maxSize);
         return this;
     }

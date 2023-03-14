@@ -170,7 +170,6 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
-
         <!-- https://mvnrepository.com/artifact/com.alicp.jetcache/jetcache-starter-redis -->
         <dependency>
             <groupId>com.alicp.jetcache</groupId>

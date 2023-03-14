@@ -1,13 +1,17 @@
 package io.dexterity.common.client;
 
+import cn.hutool.core.map.MapUtil;
 import com.alicp.jetcache.Cache;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import io.dexterity.common.client.exception.LMDBCommonException;
 import io.dexterity.common.util.EncryptionUtils;
+import io.dexterity.common.util.securtiy.Key;
+import io.dexterity.common.util.securtiy.fast.FastOpeCipher;
+import io.dexterity.common.util.securtiy.fast.FastOpeKey;
+import io.dexterity.common.util.securtiy.util.Encoder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.lmdbjava.*;
 
 import java.lang.reflect.Type;
@@ -26,31 +30,37 @@ import java.util.*;
 public class MultipleDBi {
 
     //DB实例
-    private final Dbi<ByteBuffer> db;
+    public final Dbi<ByteBuffer> db;
 
     //所属的ENV
     private final String envName;
 
     private final Gson gson = new Gson();
 
-    private final Env<ByteBuffer> env;
+    public final Env<ByteBuffer> env;
 
     /**
      *
      */
-    private final Cache<String,List<String>> cache;
+    private final Cache<String, List<String>> cache;
 
     private final EncryptionUtils encryptionUtils;
+
+    //Order-Preserve-encryption
+    private final Key key;
 
     @Getter
     private final String password;
 
-    public MultipleDBi(Dbi<ByteBuffer> db, String envName,String password,Cache<String,List<String>> cache) {
+    public MultipleDBi(Dbi<ByteBuffer> db, String envName, String password, Cache<String, List<String>> cache) {
         this.db = db;
         this.env = MultipleLmdb.envs.get(envName).getEnv();
         this.envName = envName;
         this.encryptionUtils = new EncryptionUtils(password);
         this.password = password;
+        FastOpeCipher fastOpeCipher = new FastOpeCipher();
+        String s = "0.04677844849377971,0.03153262861848518,193006692460445328,17172942787053";
+        this.key = fastOpeCipher.generateKey(s);
         this.cache = cache;
     }
 
@@ -60,9 +70,17 @@ public class MultipleDBi {
      * @param s 要转的字符串
      * @return 转换结果
      */
-    private ByteBuffer stringToBytes(String s) {
+    public ByteBuffer byteKey(String s) {
+        byte[] bytes = key.encryptString(s);
+        ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
+        //将字符串转成ByteBuffer
+        buffer.put(bytes);
+        buffer.flip();
+        return buffer;
+    }
+
+    public ByteBuffer byteValue(String s) {
         String encrypted = encryptionUtils.encrypt(s);
-//        log.info("encrypt : {} -> {}",s,encrypted);
         byte[] bytes = encrypted.getBytes();
         ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
         //将字符串转成ByteBuffer
@@ -71,10 +89,50 @@ public class MultipleDBi {
         return buffer;
     }
 
-    private String bytesToString(ByteBuffer buffer) {
+    private static byte[] bufferToByte(ByteBuffer buffer) {
+        buffer.rewind();
+        //获取buffer中有效大小
+        byte[] bs= new byte[buffer.capacity()];
+        buffer.get(bs);
+        return bs;
+    }
+
+    public String stringKey(ByteBuffer buffer) {
+        byte[] array = bufferToByte(buffer);
+        return key.decryptString(array);
+    }
+
+    public String stringValue(ByteBuffer buffer) {
         Charset charset = StandardCharsets.UTF_8;
         CharBuffer charBuffer = charset.decode(buffer);
         return encryptionUtils.decrypt(charBuffer.toString());
+    }
+
+
+    public List<Map.Entry<String, String>> getPartly(int start, int end) {
+        List<Map.Entry<String, String>> res = new ArrayList<>();
+        try (Txn<ByteBuffer> txn = env.txnRead()) {
+            int count = 0;
+            for (CursorIterable.KeyVal<ByteBuffer> next :
+                    db.iterate(txn)) {
+                count++;
+                if (count >= start) {
+                    res.add(MapUtil.entry(stringKey(next.key()), stringValue(next.val())));
+                }
+                if (count > end) break;
+            }
+        }
+        return res;
+    }
+
+    public List<Map.Entry<String, String>> getAll() {
+        List<Map.Entry<String, String>> res = new ArrayList<>();
+        try (Txn<ByteBuffer> txn = env.txnRead()) {
+            for (CursorIterable.KeyVal<ByteBuffer> next : db.iterate(txn,KeyRange.all())) {
+                res.add(MapUtil.entry(stringKey(next.key()), stringValue(next.val())));
+            }
+        }
+        return res;
     }
 
     /**
@@ -91,7 +149,7 @@ public class MultipleDBi {
             return list.get(0);
         }
 
-        ByteBuffer byteBuffer = stringToBytes(key);
+        ByteBuffer byteBuffer = byteKey(key);
         ByteBuffer res;
         try (Txn<ByteBuffer> txn = env.txnRead()) {
             res = db.get(txn, byteBuffer);
@@ -99,8 +157,8 @@ public class MultipleDBi {
 
         if (res == null) return null;
 
-        String resString = bytesToString(res);
-        putCache(key,resString);
+        String resString = stringValue(res);
+        putCache(key, resString);
 
         return resString;
     }
@@ -118,13 +176,13 @@ public class MultipleDBi {
             return list.get(0);
         }
 
-        ByteBuffer byteBuffer = stringToBytes(key);
+        ByteBuffer byteBuffer = byteKey(key);
         ByteBuffer res;
         res = db.get(txn, byteBuffer);
         if (res == null) return null;
 
-        String resString = bytesToString(res);
-        putCache(key,resString);
+        String resString = stringValue(res);
+        putCache(key, resString);
 
         return resString;
     }
@@ -161,7 +219,8 @@ public class MultipleDBi {
      */
     public <T> T getAsObject(String key) {
         String s = this.get(key);
-        Type type = new TypeToken<T>() {}.getType();
+        Type type = new TypeToken<T>() {
+        }.getType();
         return gson.fromJson(s, type);
     }
 
@@ -292,8 +351,8 @@ public class MultipleDBi {
         this.putAll(txn, putMap);
     }
 
-    static class InvalidMethodException extends RuntimeException{
-        public InvalidMethodException(){
+    static class InvalidMethodException extends RuntimeException {
+        public InvalidMethodException() {
             super("Lmdb: getPatch Method should not used for multiPie key-value entry,use getDuplicatedData instead");
         }
     }
@@ -331,19 +390,19 @@ public class MultipleDBi {
     private void doGetPatch(Txn<ByteBuffer> txn, Collection<String> keys, Map<String, String> resList) {
         for (var s : keys) {
             List<String> list = cache.get(s);
-            if (list != null && list.size() == 1){
-                resList.put(s,list.get(0));
+            if (list != null && list.size() == 1) {
+                resList.put(s, list.get(0));
                 continue;
-            }else if (list != null && list.size() > 1){
+            } else if (list != null && list.size() > 1) {
                 throw new InvalidMethodException();
             }
 
-            ByteBuffer byteBuffer = stringToBytes(s);
+            ByteBuffer byteBuffer = byteKey(s);
             ByteBuffer res = db.get(txn, byteBuffer);
             if (res == null) resList.put(s, null);
             else {
-                String value = bytesToString(res);
-                putCache(s,value);
+                String value = stringValue(res);
+                putCache(s, value);
                 resList.put(s, value);
             }
         }
@@ -357,7 +416,7 @@ public class MultipleDBi {
      */
     public Map<String, String> getPatch(Txn<ByteBuffer> txn, String... keys) {
         Map<String, String> resList = new HashMap<>();
-        doGetPatch(txn, List.of(keys),resList);
+        doGetPatch(txn, List.of(keys), resList);
         if (resList.size() != keys.length)
             throw new LMDBCommonException("Lmdb patch query error:resList's length doesn't match keys");
         return resList;
@@ -372,7 +431,7 @@ public class MultipleDBi {
     public Map<String, String> getPatch(String... keys) {
         Map<String, String> resList = new HashMap<>();
         try (Txn<ByteBuffer> txn = env.txnRead()) {
-            doGetPatch(txn,List.of(keys),resList);
+            doGetPatch(txn, List.of(keys), resList);
         }
         if (resList.size() != keys.length)
             throw new LMDBCommonException("Lmdb patch query error:resList's length doesn't match keys");
@@ -385,10 +444,10 @@ public class MultipleDBi {
      * @param prefix 前缀名称
      * @return 返回一个Map
      */
-    public Map<String, CursorIterable.KeyVal<ByteBuffer>> prefixSearch(String prefix) {
+    public List<Map.Entry<String, String>> prefixSearch(String prefix) {
         //TODO 测试 和 缓存（由于暂时没用到这个特性，搁置）
-        ByteBuffer prefixBuffer = stringToBytes(prefix);
-        Map<String, CursorIterable.KeyVal<ByteBuffer>> res = new HashMap<>();
+        ByteBuffer prefixBuffer = byteKey(prefix);
+        List<Map.Entry<String, String>> res = new ArrayList<>();
         try (Txn<ByteBuffer> txn = env.txnWrite()) {
             iteratePrefix(txn, prefix, prefixBuffer, res);
         }
@@ -401,10 +460,10 @@ public class MultipleDBi {
      * @param prefix 前缀名称
      * @return 返回一个Map
      */
-    public Map<String, CursorIterable.KeyVal<ByteBuffer>> prefixSearch(Txn<ByteBuffer> txn, String prefix) {
+    public List<Map.Entry<String, String>> prefixSearch(Txn<ByteBuffer> txn, String prefix) {
         //TODO 测试 和 缓存（由于暂时没用到这个特性，搁置）
-        ByteBuffer prefixBuffer = stringToBytes(prefix);
-        Map<String, CursorIterable.KeyVal<ByteBuffer>> res = new HashMap<>();
+        ByteBuffer prefixBuffer = byteKey(prefix);
+        List<Map.Entry<String, String>> res = new ArrayList<>();
         iteratePrefix(txn, prefix, prefixBuffer, res);
         return res;
     }
@@ -420,18 +479,13 @@ public class MultipleDBi {
     private void iteratePrefix(Txn<ByteBuffer> txn,
                                String prefix,
                                ByteBuffer prefixBuffer,
-                               Map<String, CursorIterable.KeyVal<ByteBuffer>> res) {
-        for (CursorIterable.KeyVal<ByteBuffer> next :
-                db.iterate(txn, KeyRange.atLeast(prefixBuffer))) {
-            ByteBuffer keyBuf = next.key();
-            byte[] keyBytes = new byte[keyBuf.remaining()];
-            keyBuf.get(keyBytes);
+                               List<Map.Entry<String, String>> res) {
 
-            String key = new String(keyBytes);
-            if (!key.startsWith(prefix)) {
-                break;
-            }
-            res.put(key, next);
+        Cursor<ByteBuffer> cursor = db.openCursor(txn);
+        for (CursorIterable.KeyVal<ByteBuffer> next :
+                db.iterate(txn, KeyRange.greaterThan(prefixBuffer))) {
+            ByteBuffer keyBuf = next.key();
+            if (stringKey(keyBuf).startsWith(prefix)) res.add(MapUtil.entry(stringKey(next.key()), stringValue(next.val())));
         }
     }
 
@@ -439,9 +493,10 @@ public class MultipleDBi {
     /**
      * 看上去就性能不会好的东西
      * 主要是在put的时候使该value对应的某个范围查询的缓存过期
+     *
      * @param value put的值
      */
-    private void removeRange(String value){
+    private void removeRange(String value) {
 
         Set<String> removeU = new HashSet<>();
         Set<String> removeL = new HashSet<>();
@@ -464,31 +519,45 @@ public class MultipleDBi {
         }
         listU.removeAll(removeU);
         listL.removeAll(removeL);
-        putCache("ub-pos",listU);
-        putCache("lb-pos",listL);
+        putCache("ub-pos", listU);
+        putCache("lb-pos", listL);
     }
 
-    private void putCache(String key,String value){
+    private void putCache(String key, String value) {
         removeRange(value);
-        key = new String(db.getName()) + "-"+ key;
-        if(!cache.putIfAbsent(key, Collections.singletonList(value))){
+        key = new String(db.getName()) + "-" + key;
+        if (!cache.putIfAbsent(key, Collections.singletonList(value))) {
             List<String> list = cache.get(key);
             if (list == null) list = new ArrayList<>();
             else list = new ArrayList<>(list);
             list.add(value);
-            cache.put(key,list);
+            cache.put(key, list);
         }
     }
 
-    private void putCache(String key,List<String> value){
+    private void putCache(String key, List<String> value) {
         value.forEach(this::removeRange);
-        key = new String(db.getName()) + "-" +key;
-        if(!cache.putIfAbsent(key, new ArrayList<>(value))){
+        key = new String(db.getName()) + "-" + key;
+        if (!cache.putIfAbsent(key, new ArrayList<>(value))) {
             List<String> list = cache.get(key);
             if (list == null) list = new ArrayList<>();
             else list = new ArrayList<>(list);
             list.addAll(value);
-            cache.put(key,list);
+            cache.put(key, list);
+        }
+    }
+
+    private void putEntryCache(String key, List<Map.Entry<String, String>> value) {
+        for (Map.Entry<String, String> stringStringEntry : value) {
+            removeRange(stringStringEntry.getValue());
+        }
+        key = new String(db.getName()) + "-" + key;
+        if (!cache.putIfAbsent(key, Collections.singletonList(gson.toJson(value)))) {
+            List<String> list = cache.get(key);
+            if (list == null) list = new ArrayList<>();
+            else list = new ArrayList<>(list);
+            list.add(gson.toJson(value));
+            cache.put(key, list);
         }
     }
 
@@ -499,10 +568,10 @@ public class MultipleDBi {
      * @param value value String类型
      */
     public void put(String key, String value) {
-        ByteBuffer keyBuffer = stringToBytes(key);
-        ByteBuffer valueBuffer = stringToBytes(value);
+        ByteBuffer keyBuffer = byteKey(key);
+        ByteBuffer valueBuffer = byteValue(value);
         db.put(keyBuffer, valueBuffer);
-        putCache(key,value);
+        putCache(key, value);
     }
 
     /**
@@ -512,10 +581,13 @@ public class MultipleDBi {
      * @param value value String类型
      */
     public void put(String key, String value, Txn<ByteBuffer> txn) {
-        ByteBuffer keyBuffer = stringToBytes(key);
-        ByteBuffer valueBuffer = stringToBytes(value);
-        db.put(txn, keyBuffer, valueBuffer);
-        putCache(key,value);
+        ByteBuffer keyBuffer = byteKey(key);
+        ByteBuffer valueBuffer = byteValue(value);
+        Txn<ByteBuffer> txn1 = env.txn(txn);
+        db.put(txn1, keyBuffer, valueBuffer);
+        txn1.commit();
+        txn1.close();
+        putCache(key, value);
     }
 
     /**
@@ -523,13 +595,14 @@ public class MultipleDBi {
      *
      * @param map key-value 对
      */
-    public void putAll(Txn<ByteBuffer> txn, @NotNull Map<String, List<String>> map) {
-        try(Txn<ByteBuffer> ct = env.txn(txn)){
+    public void putAll(Txn<ByteBuffer> txn, Map<String, List<String>> map) {
+
+        try (Txn<ByteBuffer> ct = env.txn(txn)) {
             Cursor<ByteBuffer> c = db.openCursor(ct);
             for (var entry : map.entrySet()) {
-                ByteBuffer keyBuffer = stringToBytes(entry.getKey());
+                ByteBuffer keyBuffer = byteKey(entry.getKey());
                 for (var a : entry.getValue()) {
-                    ByteBuffer valueBuffer = stringToBytes(a);
+                    ByteBuffer valueBuffer = byteValue(a);
                     c.put(keyBuffer, valueBuffer);
                     c.next();
                 }
@@ -539,10 +612,9 @@ public class MultipleDBi {
         }
 
         for (var entry : map.entrySet()) {
-            putCache(entry.getKey(),entry.getValue());
+            putCache(entry.getKey(), entry.getValue());
         }
     }
-
 
 
     /**
@@ -550,16 +622,16 @@ public class MultipleDBi {
      *
      * @param map key-value 对
      */
-    public void putAll(@NotNull Map<String, List<String>> map) {
+    public void putAll(Map<String, List<String>> map) {
         try (Txn<ByteBuffer> txn = env.txnWrite()) {
             final Cursor<ByteBuffer> c = db.openCursor(txn);
 
             map.forEach(
                     (key, value) -> {
-                        ByteBuffer keyBuffer = stringToBytes(key);
+                        ByteBuffer keyBuffer = byteKey(key);
                         value.forEach(
                                 v -> {
-                                    ByteBuffer valueBuffer = stringToBytes(v);
+                                    ByteBuffer valueBuffer = byteValue(v);
                                     c.put(keyBuffer, valueBuffer);
                                     c.next();
                                 }
@@ -572,7 +644,7 @@ public class MultipleDBi {
             txn.commit();
         }
         for (var entry : map.entrySet()) {
-            putCache(entry.getKey(),entry.getValue());
+            putCache(entry.getKey(), entry.getValue());
         }
     }
 
@@ -583,19 +655,19 @@ public class MultipleDBi {
      * @return String类型的List 查询结果
      */
     public List<String> getDuplicatedData(String key) {
-        ByteBuffer keyBuffer = stringToBytes(key);
+        ByteBuffer keyBuffer = byteKey(key);
         List<String> resultList = new ArrayList<>();
-        List<String> list = cache.get(new String(db.getName())+key);
+        List<String> list = cache.get(new String(db.getName()) + key);
         if (list != null && !list.isEmpty()) return list;
 
         try (Txn<ByteBuffer> txn = env.txnRead()) {
             for (CursorIterable.KeyVal<ByteBuffer> byteBufferKeyVal : db.iterate(txn, KeyRange.closed(keyBuffer, keyBuffer))) {
-                String s = bytesToString(byteBufferKeyVal.val());
+                String s = stringValue(byteBufferKeyVal.val());
                 resultList.add(s);
             }
         }
 
-        putCache(key,resultList);
+        putCache(key, resultList);
         return resultList;
     }
 
@@ -606,16 +678,16 @@ public class MultipleDBi {
      * @return String类型的List 查询结果
      */
     public List<String> getDuplicatedData(String key, Txn<ByteBuffer> txn) {
-        ByteBuffer keyBuffer = stringToBytes(key);
-        List<String> list = cache.get(new String(db.getName())+key);
+        ByteBuffer keyBuffer = byteKey(key);
+        List<String> list = cache.get(new String(db.getName()) + key);
         if (list != null && !list.isEmpty()) return list;
         List<String> resultList = new ArrayList<>();
         for (CursorIterable.KeyVal<ByteBuffer> byteBufferKeyVal : db.iterate(txn, KeyRange.closed(keyBuffer, keyBuffer))) {
-            String s = bytesToString(byteBufferKeyVal.val());
+            String s = stringValue(byteBufferKeyVal.val());
             resultList.add(s);
         }
 
-        putCache(key,resultList);
+        putCache(key, resultList);
         return resultList;
     }
 
@@ -625,20 +697,24 @@ public class MultipleDBi {
      * 携带父事务
      * 重复Key检索
      * 全额检索不走缓存！
+     *
      * @param ub key的上界 可以为空，代表无上界 注意：为小于等于
      * @param lb key的下界 可以为空，代表无下届 注意：为大于等于
      * @return 符合条件的所有值
      */
-    public List<String> getRangedDuplicatedData(String lb, String ub) {
+    public List<Map.Entry<String, String>> getRangedDuplicatedData(String lb, String ub) {
+
+        Type type = new TypeToken<Map.Entry<String, String>>() {
+        }.getType();
 
         //全额返回
         if (ub == null && lb == null) {
 
-            List<String> resultList = new ArrayList<>();
+            List<Map.Entry<String, String>> resultList = new ArrayList<>();
             try (Txn<ByteBuffer> txn = env.txnRead()) {
                 for (CursorIterable.KeyVal<ByteBuffer> byteBufferKeyVal : db.iterate(txn)) {
-                    String s = bytesToString(byteBufferKeyVal.val());
-                    resultList.add(s);
+                    String s = stringValue(byteBufferKeyVal.val());
+                    resultList.add(MapUtil.entry(stringKey(byteBufferKeyVal.key()), s));
                 }
             }
             return resultList;
@@ -646,64 +722,64 @@ public class MultipleDBi {
 
         //小于等于
         if (lb == null) {
-            ByteBuffer ubBuffer = stringToBytes(ub);
-            List<String> resultList = new ArrayList<>();
+            ByteBuffer ubBuffer = byteKey(ub);
+            List<Map.Entry<String, String>> resultList = new ArrayList<>();
 
             List<String> list = cache.get(new String(db.getName()) + "ranged-ub-" + ub);
-            if (list != null && list.isEmpty()) return list;
+            if (list != null && !list.isEmpty()) return gson.fromJson(list.get(0), type);
 
             try (Txn<ByteBuffer> txn = env.txnRead()) {
                 for (CursorIterable.KeyVal<ByteBuffer> byteBufferKeyVal : db.iterate(txn, KeyRange.atMost(ubBuffer))) {
-                    String s = bytesToString(byteBufferKeyVal.val());
-                    resultList.add(s);
+                    String s = stringValue((byteBufferKeyVal.val()));
+                    resultList.add(MapUtil.entry(stringKey(byteBufferKeyVal.key()), s));
                 }
             }
 
-            putCache("ub-pos",ub);
-            putCache("ranged-ub-"+ub,resultList);
+            putCache("ub-pos", ub);
+            putEntryCache("ranged-ub-" + ub, resultList);
             return resultList;
         }
 
         //大于等于
         if (ub == null) {
-            ByteBuffer lbBuffer = stringToBytes(lb);
-            List<String> resultList = new ArrayList<>();
+            ByteBuffer lbBuffer = byteKey(lb);
+            List<Map.Entry<String, String>> resultList = new ArrayList<>();
 
             List<String> list = cache.get(new String(db.getName()) + "ranged-lb-" + lb);
-            if (list != null && list.isEmpty()) return list;
+            if (list != null && !list.isEmpty()) return gson.fromJson(list.get(0), type);
 
             try (Txn<ByteBuffer> txn = env.txnRead()) {
                 for (CursorIterable.KeyVal<ByteBuffer> byteBufferKeyVal : db.iterate(txn, KeyRange.atLeast(lbBuffer))) {
-                    String s = bytesToString(byteBufferKeyVal.val());
-                    resultList.add(s);
+                    String s = stringValue(byteBufferKeyVal.val());
+                    resultList.add(MapUtil.entry(stringKey(byteBufferKeyVal.key()), s));
                 }
             }
 
-            putCache("ranged-ub-"+lb,resultList);
-            putCache("lb-pos",lb);
+            putEntryCache("ranged-ub-" + lb, resultList);
+            putCache("lb-pos", lb);
             return resultList;
         }
 
 
         //上下界都有
-        ByteBuffer ubBuffer = stringToBytes(ub);
-        ByteBuffer lbBuffer = stringToBytes(lb);
-        List<String> resultList = new ArrayList<>();
+        ByteBuffer ubBuffer = byteKey(ub);
+        ByteBuffer lbBuffer = byteKey(lb);
+        List<Map.Entry<String, String>> resultList = new ArrayList<>();
 
         String key = new String(db.getName()) + "ranged-lb-" + lb + "-ub-" + ub;
         List<String> list = cache.get(key);
-        if (list != null && list.isEmpty()) return list;
+        if (list != null && !list.isEmpty()) return gson.fromJson(list.get(0), type);
 
         try (Txn<ByteBuffer> txn = env.txnRead()) {
             for (CursorIterable.KeyVal<ByteBuffer> byteBufferKeyVal : db.iterate(txn, KeyRange.closed(ubBuffer, lbBuffer))) {
-                String s = bytesToString(byteBufferKeyVal.val());
-                resultList.add(s);
+                String s = stringValue(byteBufferKeyVal.val());
+                resultList.add(MapUtil.entry(stringKey(byteBufferKeyVal.key()), s));
             }
         }
 
-        putCache(key,resultList);
-        putCache("lb-pos",lb);
-        putCache("ub-pos",ub);
+        putEntryCache(key, resultList);
+        putCache("lb-pos", lb);
+        putCache("ub-pos", ub);
         return resultList;
     }
 
@@ -716,79 +792,82 @@ public class MultipleDBi {
      * @param lb key的下界 可以为空，代表无下届 注意：为大于等于
      * @return 符合条件的所有值
      */
-    public List<String> getRangedDuplicatedData(Txn<ByteBuffer> parent, String lb, String ub) {
+    public List<Map.Entry<String, String>> getRangedDuplicatedData(Txn<ByteBuffer> parent, String lb, String ub) {
 
+
+        //全额返回
+        Type type = new TypeToken<Map.Entry<String, String>>() {
+        }.getType();
 
         //全额返回
         if (ub == null && lb == null) {
 
-
-            List<String> resultList = new ArrayList<>();
-            try (Txn<ByteBuffer> txn = env.txn(parent)) {
-                for (CursorIterable.KeyVal<ByteBuffer> byteBufferKeyVal : db.iterate(txn)) {
-                    String s = bytesToString(byteBufferKeyVal.val());
-                    resultList.add(s);
-                }
+            List<Map.Entry<String, String>> resultList = new ArrayList<>();
+            for (CursorIterable.KeyVal<ByteBuffer> byteBufferKeyVal : db.iterate(parent,KeyRange.all())) {
+                String s = stringValue(byteBufferKeyVal.val());
+                resultList.add(MapUtil.entry(stringKey(byteBufferKeyVal.key()), s));
             }
+
             return resultList;
         }
 
         //小于等于
         if (lb == null) {
-            ByteBuffer ubBuffer = stringToBytes(ub);
-            List<String> resultList = new ArrayList<>();
+            ByteBuffer ubBuffer = byteKey(ub);
+            List<Map.Entry<String, String>> resultList = new ArrayList<>();
 
             List<String> list = cache.get(new String(db.getName()) + "ranged-ub-" + ub);
-            if (list != null && list.isEmpty()) return list;
+            if (list != null && !list.isEmpty()) return gson.fromJson(list.get(0), type);
 
-            try (Txn<ByteBuffer> txn = env.txn(parent)) {
-                for (CursorIterable.KeyVal<ByteBuffer> byteBufferKeyVal : db.iterate(txn, KeyRange.atMost(ubBuffer))) {
-                    String s = bytesToString(byteBufferKeyVal.val());
-                    resultList.add(s);
-                }
+            for (CursorIterable.KeyVal<ByteBuffer> byteBufferKeyVal : db.iterate(parent, KeyRange.atMost(ubBuffer))) {
+                String s = stringValue(byteBufferKeyVal.val());
+                resultList.add(MapUtil.entry(stringKey(byteBufferKeyVal.key()), s));
             }
 
-            putCache("ranged-ub-"+ub,resultList);
+
+            putCache("ub-pos", ub);
+            putEntryCache("ranged-ub-" + ub, resultList);
             return resultList;
         }
 
         //大于等于
         if (ub == null) {
-            ByteBuffer lbBuffer = stringToBytes(lb);
-            List<String> resultList = new ArrayList<>();
+            ByteBuffer lbBuffer = byteKey(lb);
+            List<Map.Entry<String, String>> resultList = new ArrayList<>();
 
             List<String> list = cache.get(new String(db.getName()) + "ranged-lb-" + lb);
-            if (list != null && list.isEmpty()) return list;
+            if (list != null && !list.isEmpty()) return gson.fromJson(list.get(0), type);
 
-            try (Txn<ByteBuffer> txn = env.txn(parent)) {
-                for (CursorIterable.KeyVal<ByteBuffer> byteBufferKeyVal : db.iterate(txn, KeyRange.atLeast(lbBuffer))) {
-                    String s = bytesToString(byteBufferKeyVal.val());
-                    resultList.add(s);
-                }
+            for (CursorIterable.KeyVal<ByteBuffer> byteBufferKeyVal : db.iterate(parent, KeyRange.atLeast(lbBuffer))) {
+                String s = stringValue(byteBufferKeyVal.val());
+                resultList.add(MapUtil.entry(stringKey(byteBufferKeyVal.key()), s));
             }
 
-            putCache("ranged-ub-"+lb,resultList);
 
+            putEntryCache("ranged-ub-" + lb, resultList);
+            putCache("lb-pos", lb);
             return resultList;
         }
 
 
         //上下界都有
-        ByteBuffer ubBuffer = stringToBytes(ub);
-        ByteBuffer lbBuffer = stringToBytes(lb);
-        List<String> resultList = new ArrayList<>();
+        ByteBuffer ubBuffer = byteKey(ub);
+        ByteBuffer lbBuffer = byteKey(lb);
+        List<Map.Entry<String, String>> resultList = new ArrayList<>();
 
         String key = new String(db.getName()) + "ranged-lb-" + lb + "-ub-" + ub;
         List<String> list = cache.get(key);
-        if (list != null && list.isEmpty()) return list;
+        if (list != null && !list.isEmpty()) return gson.fromJson(list.get(0), type);
 
-        try (Txn<ByteBuffer> txn = env.txn(parent)) {
-            for (CursorIterable.KeyVal<ByteBuffer> byteBufferKeyVal : db.iterate(txn, KeyRange.closed(ubBuffer, lbBuffer))) {
-                String s = bytesToString(byteBufferKeyVal.val());
-                resultList.add(s);
-            }
+        for (CursorIterable.KeyVal<ByteBuffer> byteBufferKeyVal : db.iterate(parent, KeyRange.closed(lbBuffer, ubBuffer))) {
+            String s = stringValue(byteBufferKeyVal.val());
+            resultList.add(MapUtil.entry(stringKey(byteBufferKeyVal.key()), s));
         }
-        putCache(key,resultList);
+
+
+        putEntryCache(key, resultList);
+        putCache("lb-pos", lb);
+        putCache("ub-pos", ub);
         return resultList;
     }
 
@@ -801,8 +880,8 @@ public class MultipleDBi {
     public String getAll(String key) {
         try (Txn<ByteBuffer> txn = env.txnRead()) {
             List<String> resultList = new ArrayList<>();
-            ByteBuffer byteBuffer = db.get(txn, stringToBytes(key));
-            return bytesToString(byteBuffer);
+            ByteBuffer byteBuffer = db.get(txn, byteKey(key));
+            return stringValue(byteBuffer);
         }
     }
 
@@ -813,8 +892,8 @@ public class MultipleDBi {
      * @param value String类型的value
      */
     public void deleteFromDuplicatedData(String key, String value) {
-        ByteBuffer keyBuffer = stringToBytes(key);
-        ByteBuffer valueBuffer = stringToBytes(value);
+        ByteBuffer keyBuffer = byteKey(key);
+        ByteBuffer valueBuffer = byteValue(value);
         try (Txn<ByteBuffer> txn = env.txnWrite()) {
             CursorIterable<ByteBuffer> iterate = db.iterate(txn, KeyRange.closed(keyBuffer, keyBuffer));
             Iterator<CursorIterable.KeyVal<ByteBuffer>> iterator = iterate.iterator();
@@ -822,7 +901,7 @@ public class MultipleDBi {
                 if (iterator.next().val().equals(valueBuffer)) iterator.remove();
             }
         }
-        cache.remove(new String(db.getName())+key);
+        cache.remove(new String(db.getName()) + key);
     }
 
     /**
@@ -832,14 +911,14 @@ public class MultipleDBi {
      * @param value String类型的value
      */
     public void deleteFromDuplicatedData(String key, String value, Txn<ByteBuffer> txn) {
-        ByteBuffer keyBuffer = stringToBytes(key);
-        ByteBuffer valueBuffer = stringToBytes(value);
+        ByteBuffer keyBuffer = byteKey(key);
+        ByteBuffer valueBuffer = byteValue(value);
         CursorIterable<ByteBuffer> iterate = db.iterate(txn, KeyRange.closed(keyBuffer, keyBuffer));
         Iterator<CursorIterable.KeyVal<ByteBuffer>> iterator = iterate.iterator();
         while (iterator.hasNext()) {
             if (iterator.next().val().equals(valueBuffer)) iterator.remove();
         }
-        cache.remove(new String(db.getName())+key);
+        cache.remove(new String(db.getName()) + key);
     }
 
 
@@ -849,12 +928,53 @@ public class MultipleDBi {
      * @param key key String类型
      */
     public void delete(String key) {
-        ByteBuffer keyBuffer = stringToBytes(key);
+        ByteBuffer keyBuffer = byteKey(key);
         try (Txn<ByteBuffer> txn = env.txnWrite()) {
             db.delete(keyBuffer);
             txn.commit();
         }
-        cache.remove(new String(db.getName())+key);
+        cache.remove(new String(db.getName()) + key);
+    }
+
+
+    public void deletePatch(List<String> key, Txn<ByteBuffer> txn) {
+        key.sort(String::compareTo);
+        Set<String> keySet = new HashSet<>(key);
+        String s1 = key.get(0);
+        String s2 = key.get(key.size() - 1);
+        ByteBuffer start = byteKey(s1);
+        ByteBuffer end = byteKey(s2);
+        try (Txn<ByteBuffer> sub = env.txn(txn)) {
+            CursorIterable<ByteBuffer> iterate = db.iterate(sub, KeyRange.closed(start, end));
+            Iterator<CursorIterable.KeyVal<ByteBuffer>> iterator = iterate.iterator();
+            while (iterator.hasNext()) {
+                CursorIterable.KeyVal<ByteBuffer> next = iterator.next();
+                if (keySet.contains(stringKey(next.key()))) {
+                    iterator.remove();
+                }
+                cache.remove(new String(db.getName()) + key);
+            }
+        }
+    }
+
+    public void deletePatch(List<String> key) {
+        key.sort(String::compareTo);
+        Set<String> keySet = new HashSet<>(key);
+        String s1 = key.get(0);
+        String s2 = key.get(key.size() - 1);
+        ByteBuffer start = byteKey(s1);
+        ByteBuffer end = byteKey(s2);
+        try (Txn<ByteBuffer> txn = env.txnWrite()) {
+            CursorIterable<ByteBuffer> iterate = db.iterate(txn, KeyRange.closed(start, end));
+            Iterator<CursorIterable.KeyVal<ByteBuffer>> iterator = iterate.iterator();
+            while (iterator.hasNext()) {
+                CursorIterable.KeyVal<ByteBuffer> next = iterator.next();
+                if (keySet.contains(stringKey(next.key()))) {
+                    iterator.remove();
+                }
+                cache.remove(new String(db.getName()) + key);
+            }
+        }
     }
 
 
@@ -865,12 +985,15 @@ public class MultipleDBi {
      */
     public void deletePrefix(String prefix) {
         //TODO prefix 系列操作
-        Map<String, CursorIterable.KeyVal<ByteBuffer>> stringKeyValMap = prefixSearch(prefix);
+        List<Map.Entry<String, String>> stringKeyValMap = prefixSearch(prefix);
         try (Txn<ByteBuffer> txn = env.txnWrite()) {
-            stringKeyValMap.forEach((key, value) -> db.delete(value.key()));
+            List<String> keys = new ArrayList<>();
+            stringKeyValMap.forEach((key) -> keys.add(key.getKey()));
+            deletePatch(keys);
             txn.commit();
         }
     }
 
 
 }
+

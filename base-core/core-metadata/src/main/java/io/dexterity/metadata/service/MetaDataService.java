@@ -15,13 +15,14 @@ import java.util.Set;
 @Service
 public interface MetaDataService {
     void insertNewMetadata(MetaData metaData,String bucketKey);
-    void deleteMetadata(String metadataKey,String bucketKey);
+    void deleteMetadata(List<String> metadataKey,String bucketKey);
     Set<String> selectByMetaData(MetaData metaData, String bucketKey);
     void addNewMetadata(MetaData matcher,String bucketKey,String newMdKey,String newMdValue);
     void insertPatch(List<MetaData> metaData, @BucketName String bucketKey);
-    Map<String,MetaData> selectMetadata(List<String> key, String bucketKey);
-
-
+    Map<String,MetaData> selectMdByKeys(List<String> key, String bucketKey);
+    Map<String,MetaData> selectMdByMdRange(String metadataKey, String lb, String ub, String bucketKey);
+    Map<String,MetaData> selectMdByKeyRange(String lb, String ub, String bucketKey);
+    Map<String,MetaData> selectMdByKeyPrefix(String prefix,String bucketKey);
 
 
 }
