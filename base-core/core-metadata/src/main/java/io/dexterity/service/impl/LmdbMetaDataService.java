@@ -26,7 +26,6 @@ import java.util.*;
 @Service
 @Slf4j
 public class LmdbMetaDataService implements MetaDataService {
-
     /**
      * 往一个bucket所属的metadata数据库里面插入一条metadata
      * @param metaData 一个metadata对象，包含了数条基本metadata
