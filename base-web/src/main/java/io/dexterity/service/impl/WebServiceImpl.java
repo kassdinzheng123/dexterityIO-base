@@ -52,39 +52,6 @@ public class WebServiceImpl extends ServiceImpl<WebDao, ChunkVO> implements WebS
 
     @Override
     public byte[] mergeChunk() throws RocksDBException, IOException {
-//        List<RocksDBVo> rocksDBVos = storageApi.getAll("chunkTmp");
-//        rocksDBVos.sort(Comparator.comparingInt(o -> ByteBuffer.wrap(o.getKey()).getInt()));
-//        log.info("Success Sort!");
-//        try {
-//            ByteArrayOutputStream out = new ByteArrayOutputStream();
-//            for(RocksDBVo rocksDBVo:rocksDBVos){
-//                byte[] value = rocksDBVo.getValue();
-//                out.write(value);
-//            }
-//            log.info("Success Merge!");
-//            return out.toByteArray();
-//        } catch (IOException e) {
-//            // 异常处理
-//            throw new RuntimeException("Failed to merge data", e);
-//        }
-
-//        RocksIterator iterator = storageApi.getIterator("chunkTmp");
-//        iterator.seekToFirst();
-//        ByteArrayOutputStream out = new ByteArrayOutputStream();
-//        try {
-//            while (iterator.isValid()) {
-//                byte[] value = storageApi.get("chunkTmp",iterator.key()).getValue();
-//                out.write(value);
-//                iterator.next();
-//            }
-//            log.info("Success Merge!");
-//            return out.toByteArray();
-//        } catch (IOException e) {
-//            // 异常处理
-//            throw new RuntimeException("Failed to merge data", e);
-//        } finally {
-//            iterator.close();
-//        }
         RocksIterator iterator = storageApi.getIterator("chunkTmp");
         iterator.seekToFirst();
         String tempDir = System.getenv("TEMP"); // 获取临时目录的路径
@@ -98,11 +65,21 @@ public class WebServiceImpl extends ServiceImpl<WebDao, ChunkVO> implements WebS
             }
         }
         byte[] mergedData = null;
+        int segmentSize = 4096; // 段的大小为4KB
         try (FileChannel channel = FileChannel.open(tempFile, StandardOpenOption.READ)) {
-            int size = (int) channel.size();
-            ByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, size); // 内存映射文件
-            mergedData = new byte[size];
-            buffer.get(mergedData); // 将文件转换成字节数组
+            int fileSize = (int) channel.size();
+            int segmentCount = (fileSize + segmentSize - 1) / segmentSize; // 计算需要分成多少段
+            mergedData = new byte[fileSize];
+            ByteBuffer buffer = ByteBuffer.allocate(segmentSize); // 创建一个大小为4KB的ByteBuffer
+            for (int i = 0; i < segmentCount; i++) {
+                int position = i * segmentSize;
+                int remaining = fileSize - position;
+                int size = Math.min(segmentSize, remaining); // 计算当前段的大小
+                buffer.clear();
+                channel.read(buffer, position); // 从文件中读取当前段的数据
+                buffer.flip();
+                buffer.get(mergedData, position, size); // 将当前段的数据追加到mergedData中
+            }
         }
         log.info("Success Merge!");
         Files.delete(tempFile); // 删除临时文件

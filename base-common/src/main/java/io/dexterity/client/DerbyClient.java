@@ -71,16 +71,16 @@ public class DerbyClient {
     public static void main(String[] args) throws SQLException {
         DerbyClient client = new DerbyClient();
 
-//        client.deleteTable("BUCKET");
-//        client.createTable(
-//                "bucket",
-//                "bucket_id INT PRIMARY KEY",
-//                "bucket_name VARCHAR(255)",
-//                "access_authority VARCHAR(255)",
-//                "domain_name VARCHAR(255)",
-//                "region VARCHAR(255)",
-//                "status INT",
-//                "tags VARCHAR(255)");
+        client.deleteTable("BUCKET");
+        client.createTable(
+                "bucket",
+                "bucket_id VARCHAR(255) PRIMARY KEY NOT NULL",
+                "bucket_name VARCHAR(255) NOT NULL",
+                "access_authority VARCHAR(255) NOT NULL",
+                "domain_name VARCHAR(255) NOT NULL",
+                "region VARCHAR(255) NOT NULL",
+                "status INT NOT NULL",
+                "tags VARCHAR(255)");
 //        client.createTable(
 //                "chunk_info",
 //                "index INT PRIMARY KEY",

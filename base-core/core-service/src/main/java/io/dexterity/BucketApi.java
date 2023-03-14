@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface BucketApi {
     int createBucket(BucketVO bucketVO);
-    int deleteBucket(Integer bucketId);
+    int deleteBucket(String bucketId);
     List<BucketVO> listBucket();
-    int updateStatusBucket(Integer bucketId,Integer status);
+    int updateStatusBucket(String bucketId,Integer status);
 }

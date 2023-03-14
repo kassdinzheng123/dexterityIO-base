@@ -14,7 +14,7 @@ public class BucketVO {
      * 存储桶id
      */
     @TableId
-    private Integer bucketId;
+    private String bucketId;
     /**
      * 存储桶名称
      */
@@ -34,9 +34,9 @@ public class BucketVO {
     /**
      * 存储桶状态
      */
-    private Integer status;
+    private Integer status = 1;
     /**
      * 存储桶标签,KV
      */
-    private JSONArray tags;
+    private JSONArray tags = new JSONArray();
 }

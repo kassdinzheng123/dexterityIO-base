@@ -19,7 +19,7 @@ public class BucketApiImpl implements BucketApi {
     }
 
     @Override
-    public int deleteBucket(Integer bucketId) {
+    public int deleteBucket(String bucketId) {
         return bucketService.deleteBucket(bucketId);
     }
 
@@ -29,7 +29,7 @@ public class BucketApiImpl implements BucketApi {
     }
 
     @Override
-    public int updateStatusBucket(Integer bucketId, Integer status) {
+    public int updateStatusBucket(String bucketId, Integer status) {
         return bucketService.updateStatusBucket(bucketId,status);
     }
 }

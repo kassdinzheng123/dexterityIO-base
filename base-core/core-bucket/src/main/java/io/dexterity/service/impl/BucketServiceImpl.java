@@ -1,10 +1,12 @@
 package io.dexterity.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.IdUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.dexterity.dao.BucketDao;
+import io.dexterity.exception.MyException;
 import io.dexterity.po.pojo.Bucket;
 import io.dexterity.po.vo.BucketVO;
 import io.dexterity.service.BucketService;
@@ -23,16 +25,26 @@ public class BucketServiceImpl extends ServiceImpl<BucketDao, Bucket> implements
         Bucket bucket = new Bucket();
         BeanUtil.copyProperties(bucketVO,bucket);
         bucket.setTags(bucketVO.getTags().toString());
+        bucket.setBucketId(IdUtil.objectId());
+        if(bucket.getBucketName() == null || bucket.getBucketName().isBlank())
+            throw new MyException(500, "存储桶名称不能为空");
+        else if (bucket.getAccessAuthority().isBlank()) {
+            throw new MyException(500, "访问权限不能为空");
+        } else if (bucket.getDomainName().isBlank()) {
+            throw new MyException(500, "域名不能为空");
+        } else if (bucket.getRegion().isBlank()) {
+            throw new MyException(500, "地区不能为空");
+        }
         return bucketDao.insert(bucket);
     }
 
     @Override
-    public int deleteBucket(Integer bucketId) {
+    public int deleteBucket(String bucketId) {
         return bucketDao.deleteById(bucketId);
     }
 
     @Override
-    public int updateStatusBucket(Integer bucketId,Integer status) {
+    public int updateStatusBucket(String bucketId,Integer status) {
         UpdateWrapper<Bucket> wrapper = new UpdateWrapper<>();
         if (status==1){
             wrapper.set("status",0).eq("bucket_id",bucketId);

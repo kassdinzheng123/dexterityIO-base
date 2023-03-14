@@ -21,33 +21,38 @@ import java.util.Objects;
 @Slf4j
 @RestController
 @RequestMapping("/web")
-@Tag(name = "服务端",description = "暂无描述")
+@Tag(name = "后端存储服务",description = "暂无描述")
 public class WebController {
     @Autowired
     private BucketApi bucketApi;
     @Autowired
     private WebService webService;
-
+    @Operation(summary = "查询存储桶列表", description = "从数据库查询创建的存储桶列表")
     @GetMapping("/bucket")
     public R<?> listBucket(){
         return new R<>(200,"请求成功",bucketApi.listBucket());
     }
 
+    @Operation(summary = "创建存储桶", description = "创建一个新的存储桶")
     @PostMapping("/bucket")
     public R<?> createBucket(@RequestBody BucketVO bucket){
         return new R<>(200,"请求成功",bucketApi.createBucket(bucket));
     }
 
+    @Operation(summary = "删除存储桶", description = "根据前端传来的存储桶id删除存储桶")
     @DeleteMapping("/bucket")
-    public R<?> deleteBucket(@RequestParam("bucketId")Integer bucketId){
+    public R<?> deleteBucket(@RequestParam("bucketId")String bucketId){
         return new R<>(200,"请求成功",bucketApi.deleteBucket(bucketId));
     }
 
+    @Operation(summary = "更新存储桶状态", description = "通过前端传来的值进行更改存储桶状态")
     @PutMapping("/bucket")
-    public R<?> updateBucketStatus(@RequestParam("bucketId")Integer bucketId,
+    public R<?> updateBucketStatus(@RequestParam("bucketId")String bucketId,
                                   @RequestParam("status")Integer status){
         return new R<>(200,"请求成功",bucketApi.updateStatusBucket(bucketId,status));
     }
+
+    @Operation(summary = "上传对象", description = "上传对象到指定存储桶")
     @PostMapping("/object")
     public R<?> uploadToBucket(
             @RequestParam("chunk") MultipartFile chunk,//块的数据
@@ -77,7 +82,7 @@ public class WebController {
         return new R<>(200,"请求成功",data);
     }
 
-    @Operation(summary = "查询某存储桶中的对象列表", description = "查询已上传的对象列表")
+    @Operation(summary = "查询对象列表", description = "查询某存储桶中的对象列表")
     @GetMapping("/object")
     public R<?> getObjByBucket(
             @RequestParam("bucketName") String bucketName
@@ -85,7 +90,7 @@ public class WebController {
         return new R<>(200,"请求成功",webService.getAllObj(bucketName));
     }
 
-    @Operation(summary = "检查对象是否上传", description = "根据前端传来的MD5查询该对象是否已上传")
+    @Operation(summary = "检查对象是否上传", description = "根据前端传来的MD5查询某存储桶的某对象是否已上传")
     @GetMapping("/object/check")
     public R<?> checkObject(@RequestParam("md5") String md5){
         log.info("对象MD5:"+md5);
@@ -115,7 +120,7 @@ public class WebController {
         data.put("info","执行正常上传");
         return  new R<>(200,"请求成功",data);
     }
-
+    @Operation(summary = "删除对象", description = "从指定存储桶中删除指定对象")
     @DeleteMapping("/object")
     public R<?> deleteObjByBucket(
             @RequestParam("bucketName") String bucketName,

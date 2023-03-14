@@ -4,7 +4,6 @@ import io.dexterity.po.vo.RocksDBVo;
 import io.swagger.v3.oas.annotations.Operation;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
-
 import java.util.List;
 import java.util.Set;
 
@@ -31,6 +30,6 @@ public interface StorageService {
     int cfDelete(String cfName) throws RocksDBException;
     @Operation(summary = "创建列族", description = "如果不存在，则创建一个新的列族")
     int cfAdd(String cfName) throws RocksDBException;
-
+    @Operation(summary = "获取迭代器", description = "获取一个指定列族的 RocksDB 迭代器")
     RocksIterator getIterator(String chunkTmp) throws RocksDBException;
 }

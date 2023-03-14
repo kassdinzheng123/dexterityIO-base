@@ -15,12 +15,12 @@ public interface BucketService extends IService<Bucket> {
     /**
      * 删除存储桶（id）
      */
-    int deleteBucket(Integer bucketId);
+    int deleteBucket(String bucketId);
 
     /**
      * 存储桶状态（id）
      */
-    int updateStatusBucket(Integer bucketId,Integer status);
+    int updateStatusBucket(String bucketId,Integer status);
 
     /**
      * 查询存储桶列表

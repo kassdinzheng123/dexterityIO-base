@@ -15,7 +15,7 @@ public class Bucket {
      * 存储桶id
      */
     @TableId
-    private Integer bucketId;
+    private String bucketId;
     /**
      * 存储桶名称
      */

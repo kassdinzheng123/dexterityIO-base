@@ -19,6 +19,5 @@ public interface StorageApi {
     Set<String> cfAll();
     int cfDelete(String cfName) throws RocksDBException;
     int cfAdd(String cfName) throws RocksDBException;
-
     RocksIterator getIterator(String chunkTmp) throws RocksDBException;
 }
