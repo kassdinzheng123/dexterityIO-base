@@ -9,12 +9,12 @@ spring:
       datasource:
         derby:
           driver-class-name: org.apache.derby.iapi.jdbc.AutoloadedDriver
-          url: jdbc:derby:E:\Derby;create=true
-        mysql:
-          driver-class-name: com.mysql.cj.jdbc.Driver
-          url: jdbc:mysql://localhost:3306/swpu_oss_0.2?characterEncoding=utf-8&serverTimezone=UTC
-          username: root
-          password: 123456
+          url: jdbc:derby:D:\Derby;create=true
+#        mysql:
+#          driver-class-name: com.mysql.cj.jdbc.Driver
+#          url: jdbc:mysql://localhost:3306/swpu_oss_0.2?characterEncoding=utf-8&serverTimezone=UTC
+#          username: root
+#          password: 123456
   servlet:
     multipart:
       max-file-size: 100MB # 配置单个上传文件的大小的限制

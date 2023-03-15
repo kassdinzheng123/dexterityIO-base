@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.util.RamUsageEstimator;
 import org.lmdbjava.Env;
+import org.lmdbjava.Txn;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -79,8 +80,6 @@ public class MultipleLmdb {
 
         mainDB.putAll(inserts);
 
-        System.out.println(mainDB.getAll());
-
     }
 
     /**
@@ -92,10 +91,20 @@ public class MultipleLmdb {
     public static void writeDBsInfo(boolean isFixDuplicated,boolean isSortedDuplicated,String dbName,String password){
         if (dbName.equals(LMDB_INFO_DB)) return;
         Map<String,List<String>> inserts = new HashMap<>();
+
         inserts.put(dbName + "-isFixDuplicated",Collections.singletonList(isFixDuplicated?"1":"0"));
         inserts.put(dbName + "-isSortedDuplicated",Collections.singletonList(isSortedDuplicated?"1":"0"));
         inserts.put(dbName + "-password",Collections.singletonList(password));
         mainDB.putAll(inserts);
+    }
+
+    public static void removeDBsInfo(String dbName, Txn<ByteBuffer> txn){
+        if (dbName.equals(LMDB_INFO_DB)) return;
+        List<String> inserts = new ArrayList<>();
+        inserts.add(dbName + "-isFixDuplicated");
+        inserts.add(dbName + "-isSortedDuplicated");
+        inserts.add(dbName + "-password");
+        mainDB.deletePatch(inserts,txn);
     }
 
     /**
@@ -224,10 +233,13 @@ public class MultipleLmdb {
         long r = RamUsageEstimator.sizeOf(objects);
         long expectedSize = env.info().mapSize;
         log.info("LMDB:current size is {}",current);
+
         while (r*10 + current > expectedSize*0.8){
             expectedSize *= 2;
             log.info("LMDB: purpose is {}",expectedSize);
         }
+
+        expectedSize *= 2;
 
         env.setMapSize(expectedSize);
 

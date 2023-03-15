@@ -1,19 +1,13 @@
 package io.dexterity.client;
 
-import cn.hutool.core.map.MapUtil;
-import io.dexterity.common.client.MultipleDBi;
-import io.dexterity.common.client.MultipleEnv;
-import io.dexterity.common.client.MultipleLmdb;
-import io.dexterity.common.client.entity.LMDBEnvSettings;
-import io.dexterity.common.client.entity.LMDBEnvSettingsBuilder;
-import io.dexterity.common.entity.MetaData;
-import io.dexterity.common.entity.constants.MetaDataConstants;
+import io.dexterity.entity.LMDBEnvSettings;
+import io.dexterity.entity.LMDBEnvSettingsBuilder;
+import io.dexterity.entity.constants.MetaDataConstants;
 import org.junit.jupiter.api.Test;
 import org.lmdbjava.Cursor;
 import org.lmdbjava.Env;
 import org.lmdbjava.Txn;
 
-import java.lang.reflect.Parameter;
 import java.nio.ByteBuffer;
 import java.util.*;
 
@@ -181,6 +175,37 @@ public class LMDBTest {
         } catch (MultipleEnv.LMDBCreateFailedException e) {
             throw new RuntimeException(e);
         }
+
+    }
+
+    @Test
+    public void transactionManager() throws MultipleEnv.LMDBCreateFailedException {
+        MultipleEnv multipleEnv = MultipleLmdb.envs.get("metadata-test-bucket");
+        MultipleDBi multipleDBi = multipleEnv.buildDBInstance("test1",false,false);
+
+
+        multipleDBi.db.delete(multipleDBi.byteKey("test"));
+        try (Txn<ByteBuffer> txn = multipleEnv.getEnv().txnWrite()) {
+            try (Txn<ByteBuffer> byteBufferTxn = multipleEnv.getEnv().txn(txn)) {
+                try (Txn<ByteBuffer> bufferTxn = multipleEnv.getEnv().txn(byteBufferTxn)) {
+                    System.out.println(1);
+                }
+            }
+        }
+
+        MultipleDBi test2Dup = multipleEnv.buildDBInstance("test3",false,true);
+
+        Map<String,List<String>> hash = new HashMap<>();
+        hash.put("1234",List.of("tttt","wwww","rrrr","qqqq"));
+        test2Dup.putAll(hash);
+
+        MultipleDBi test2UnDup = multipleEnv.buildDBInstance("test2",false,false);
+        List<Map.Entry<String, String>> all = test2Dup.getAll();
+        System.out.println(all);
+
+        System.out.println(test2Dup.db.listFlags(multipleEnv.readTxn()));
+
+        System.out.println(test2Dup.getDuplicatedData("1234"));
 
     }
 
