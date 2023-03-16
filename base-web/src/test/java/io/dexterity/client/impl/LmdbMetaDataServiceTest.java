@@ -33,7 +33,7 @@ class LmdbMetaDataServiceTest {
     public void build(){
         LMDBEnvSettings build = LMDBEnvSettingsBuilder.startBuild()
                 .envName("metadata-test-bucket")
-                .filePosition("D:\\Resource\\metadata-test")
+                .filePosition("E:\\Resource\\metadata-test")
                 .maxReaders(100)
                 .maxDBInstance(100)
                 .maxSize(1024 * 1024 * 10L)

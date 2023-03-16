@@ -80,6 +80,7 @@ public class DerbyClient {
                 "domain_name VARCHAR(255) NOT NULL",
                 "region VARCHAR(255) NOT NULL",
                 "status INT NOT NULL",
+                "create_time VARCHAR(255) NOT NULL",
                 "tags VARCHAR(255)");
 //        client.createTable(
 //                "chunk_info",

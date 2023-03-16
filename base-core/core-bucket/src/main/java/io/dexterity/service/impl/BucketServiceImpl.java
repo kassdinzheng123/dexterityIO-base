@@ -1,12 +1,16 @@
 package io.dexterity.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import io.dexterity.client.MultipleLmdb;
 import io.dexterity.client.RocksDBClient;
 import io.dexterity.dao.BucketDao;
+import io.dexterity.entity.LMDBEnvSettings;
+import io.dexterity.entity.LMDBEnvSettingsBuilder;
 import io.dexterity.exception.MyException;
 import io.dexterity.po.pojo.Bucket;
 import io.dexterity.po.vo.BucketVO;
@@ -39,6 +43,15 @@ public class BucketServiceImpl extends ServiceImpl<BucketDao, Bucket> implements
         } else if (bucket.getRegion().isBlank()) {
             throw new MyException(500, "地区不能为空");
         }
+        FileUtil.mkdir("E:\\Resource\\"+bucket.getBucketName());
+        LMDBEnvSettings build = LMDBEnvSettingsBuilder.startBuild()
+                .envName(bucket.getBucketName())
+                .filePosition("E:\\Resource\\"+bucket.getBucketName())
+                .maxReaders(100)
+                .maxDBInstance(100)
+                .maxSize(1024 * 1024 * 10L)
+                .build();
+        MultipleLmdb.buildNewEnv(build);
         RocksDBClient.cfAddIfNotExist(bucket.getBucketName());
         return bucketDao.insert(bucket);
     }

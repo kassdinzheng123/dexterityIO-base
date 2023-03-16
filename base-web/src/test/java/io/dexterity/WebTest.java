@@ -1,5 +1,6 @@
 package io.dexterity;
 
+import cn.hutool.crypto.digest.DigestUtil;
 import io.dexterity.client.DerbyClient;
 import io.dexterity.dao.WebDao;
 import io.dexterity.po.vo.RocksDBVo;
@@ -9,6 +10,7 @@ import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.io.File;
 import java.sql.SQLException;
 
 @SpringBootTest
@@ -73,5 +75,11 @@ public class WebTest {
         //删
         RocksDBVo rocksDBVo2 = storageApi.delete("bucket",key.getBytes());
         System.out.println(rocksDBVo2);
+    }
+
+    @Test
+    void getSha256(){
+        String sha256 = DigestUtil.sha256Hex(new File("C:\\Users\\warfr\\Downloads\\test.txt"));
+        System.out.println(sha256);
     }
 }

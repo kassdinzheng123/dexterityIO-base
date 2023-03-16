@@ -6,9 +6,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MetaData {
-
-
-
     public String key;
     public final Map<String,String> metaDataMap;
 

@@ -37,6 +37,10 @@ public class Bucket {
      */
     private Integer status;
     /**
+     * 创建时间
+     */
+    private String createTime;
+    /**
      * 存储桶标签,KV
      */
     private String tags;

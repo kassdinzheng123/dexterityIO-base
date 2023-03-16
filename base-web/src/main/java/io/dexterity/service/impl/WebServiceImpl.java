@@ -1,15 +1,21 @@
 package io.dexterity.service.impl;
 
 import cn.hutool.core.convert.Convert;
+import cn.hutool.crypto.digest.DigestUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.dexterity.MetaDataApi;
 import io.dexterity.StorageApi;
-import io.dexterity.annotation.RocksDBTransactional;
+import io.dexterity.annotation.*;
+import io.dexterity.aspect.LmdbTxn;
+import io.dexterity.client.MultipleEnv;
 import io.dexterity.dao.WebDao;
+import io.dexterity.entity.MetaData;
+import io.dexterity.exception.MyException;
 import io.dexterity.po.vo.ChunkVO;
 import io.dexterity.po.vo.RocksDBVo;
 import io.dexterity.service.WebService;
 import lombok.extern.slf4j.Slf4j;
+import org.lmdbjava.Txn;
 import org.rocksdb.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,6 +32,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Slf4j
@@ -36,16 +43,39 @@ public class WebServiceImpl extends ServiceImpl<WebDao, ChunkVO> implements WebS
     private MetaDataApi metaDataApi;
     @Autowired
     private WebDao webDao;
+
+    @LmdbWrite
+    @RocksDBTransactional
     @Override
     public Integer saveChunk(MultipartFile chunk, Integer index,
                              Integer chunkTotal, Long chunkSize,
-                             String crypto, String bucketName,
-                             String fileName,Long fileSize,String chunkCrypto) throws RocksDBException, IOException {
-        // 分块信息先临时存在derby中，CHUNK_INFO表 TODO 后面要存到lmdb里面(key-crypto,value-Map)
-        webDao.insert(new ChunkVO(index,chunkTotal,chunkSize,bucketName));
-        // 分块数据以（crypto-chunk）存RocksDB中
+                             String crypto, @BucketName String bucketName,
+                             String fileName, Long fileSize, String chunkCrypto,
+                             @DupNames List<String> dup, @UnDupNames List<String> unDup) throws RocksDBException, IOException {
+        // 分块信息存入LMDB
+        MultipleEnv multipleEnv = LmdbTxn.getEnv(bucketName);
+        Txn<ByteBuffer> txn = LmdbTxn.getWriteTxn(bucketName);
+
+        MetaData metaData = new MetaData();
+        metaData.key=crypto;
+        metaData.metaDataMap.put("fileName",fileName);
+        metaData.metaDataMap.put("fileSize", fileSize.toString());
+        metaData.metaDataMap.put("chunk"+index,chunkCrypto);
+        metaData.metaDataMap.put("chunkTotal", chunkTotal.toString());
+        metaData.metaDataMap.put("bucketName",bucketName);
+        metaDataApi.insertNewMetadata(metaData,multipleEnv,txn);
+
+        // 分块数据存入RocksDB
         storageApi.put(new RocksDBVo(bucketName, Convert.toPrimitiveByteArray(crypto),chunk.getBytes()));
-        return 1;
+
+        // 校验分片的sha256
+        if(checkChunk(chunkCrypto,chunk)==1){
+            log.info("分片"+index+"校验成功，sha256:"+chunkCrypto);
+            return 1;
+        }else{
+            log.info("分片"+index+"校验失败");
+            throw new MyException(500,"分片校验失败");
+        }
     }
 
     public int checkChunkAll() throws RocksDBException {
@@ -104,7 +134,6 @@ public class WebServiceImpl extends ServiceImpl<WebDao, ChunkVO> implements WebS
         HashMap<String,String> maps = new HashMap<>();
         maps.put("fileSize",fileSize.toString());
         maps.put("md5",md5);
-        int a = 1/0;
         //保存对象的元数据信息到lmdb
 //        metaDataApi.insertNewMetadata(new MetaData(fileName,maps),bucketName);
         return 1;
@@ -128,12 +157,22 @@ public class WebServiceImpl extends ServiceImpl<WebDao, ChunkVO> implements WebS
     }
 
     @Override
-    public Boolean findObjByMD5(String md5) {
+    public Boolean findObjByCrypto(String crypto,String bucketName) {
+        MultipleEnv multipleEnv = LmdbTxn.getEnv(bucketName);
+        Txn<ByteBuffer> txnRead = LmdbTxn.getReadTxn(bucketName);
         return false;
     }
 
     @Override
     public List<Integer> findChunkListByMD5(String md5) {
         return new ArrayList<>();
+    }
+
+    @Override
+    public int checkChunk(String chunkCrypto, MultipartFile chunk) throws IOException {
+        if (Objects.equals(chunkCrypto,DigestUtil.sha256Hex(chunk.getBytes()))){
+            return 1;
+        }
+        return 0;
     }
 }
