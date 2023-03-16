@@ -1,5 +1,6 @@
 package io.dexterity.client;
 
+import io.dexterity.config.MyConfig;
 import io.dexterity.entity.LMDBEnvSettings;
 import io.dexterity.entity.LMDBEnvSettingsBuilder;
 import io.dexterity.entity.constants.MetaDataConstants;
@@ -7,14 +8,15 @@ import org.junit.jupiter.api.Test;
 import org.lmdbjava.Cursor;
 import org.lmdbjava.Env;
 import org.lmdbjava.Txn;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.nio.ByteBuffer;
 import java.util.*;
-
+@Component
 public class LMDBTest {
-    @Value("${local.path}")
-    private static String path;
+    @Autowired
+    MyConfig myConfig;
     @Test
     public void expandTest() throws MultipleEnv.LMDBCreateFailedException {
         MultipleLmdb.initMainEnv();
@@ -23,7 +25,7 @@ public class LMDBTest {
                 .maxDBInstance(1)
                 .maxReaders(100)
                 .maxSize(1024L * 1024L)
-                .filePosition(path+"Resource\\lmdb-test").build();
+                .filePosition(MyConfig.path+"Resource\\lmdb-test").build();
 
         MultipleEnv multipleEnv1 = MultipleLmdb.buildNewEnv(test);
         Env<ByteBuffer> env = multipleEnv1.getEnv();

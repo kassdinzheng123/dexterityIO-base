@@ -1,13 +1,15 @@
 package io.dexterity.client;
 
-import org.springframework.beans.factory.annotation.Value;
+import io.dexterity.config.MyConfig;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.sql.*;
-
+@Component
 public class DerbyClient {
-    @Value("${local.path}")
-    private static String path;
-    private static final String DB_URL = "jdbc:derby:"+path+"Derby;create=true";
+    @Autowired
+    MyConfig myConfig;
+    private static final String DB_URL = "jdbc:derby:"+MyConfig.path+"Derby;create=true";
     private Connection conn;
     private Statement stmt;
     public DerbyClient() throws SQLException {
@@ -70,30 +72,5 @@ public class DerbyClient {
     public void deleteTable(String tableName) throws SQLException{
         String sql = "DROP TABLE " + tableName;
         stmt.executeUpdate(sql);
-    }
-
-    public static void main(String[] args) throws SQLException {
-        DerbyClient client = new DerbyClient();
-
-        client.deleteTable("BUCKET");
-        client.createTable(
-                "bucket",
-                "bucket_id VARCHAR(255) PRIMARY KEY NOT NULL",
-                "bucket_name VARCHAR(255) NOT NULL",
-                "access_authority VARCHAR(255) NOT NULL",
-                "domain_name VARCHAR(255) NOT NULL",
-                "region VARCHAR(255) NOT NULL",
-                "status INT NOT NULL",
-                "create_time VARCHAR(255) NOT NULL",
-                "tags VARCHAR(255)");
-//        client.createTable(
-//                "chunk_info",
-//                "index INT PRIMARY KEY",
-//                "chunk_total INT",
-//                "chunk_size BIGINT",
-//                "bucket_name VARCHAR(255)"
-//        );
-        client.listTable();
-        client.close();
     }
 }

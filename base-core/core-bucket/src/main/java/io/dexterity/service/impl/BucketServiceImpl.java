@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.dexterity.client.MultipleLmdb;
 import io.dexterity.client.RocksDBClient;
+import io.dexterity.config.MyConfig;
 import io.dexterity.dao.BucketDao;
 import io.dexterity.entity.LMDBEnvSettings;
 import io.dexterity.entity.LMDBEnvSettingsBuilder;
@@ -17,7 +18,6 @@ import io.dexterity.po.vo.BucketVO;
 import io.dexterity.service.BucketService;
 import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,8 +26,8 @@ import java.util.List;
 public class BucketServiceImpl extends ServiceImpl<BucketDao, Bucket> implements BucketService {
     @Autowired
     private BucketDao bucketDao;
-    @Value("${local.path}")
-    private static String path;
+    @Autowired
+    MyConfig myConfig;
 
 
     @Override
@@ -45,16 +45,19 @@ public class BucketServiceImpl extends ServiceImpl<BucketDao, Bucket> implements
         } else if (bucket.getRegion().isBlank()) {
             throw new MyException(500, "地区不能为空");
         }
-        FileUtil.mkdir(path+"Resource\\"+bucket.getBucketName());
+        // LMDB
+        FileUtil.mkdir(MyConfig.path+"Resource\\"+bucket.getBucketName());
         LMDBEnvSettings build = LMDBEnvSettingsBuilder.startBuild()
                 .envName(bucket.getBucketName())
-                .filePosition(path+"Resource\\"+bucket.getBucketName())
+                .filePosition(MyConfig.path+"Resource\\"+bucket.getBucketName())
                 .maxReaders(100)
                 .maxDBInstance(100)
                 .maxSize(1024 * 1024 * 10L)
                 .build();
         MultipleLmdb.buildNewEnv(build);
+        // RocksDB
         RocksDBClient.cfAddIfNotExist(bucket.getBucketName());
+        // Derby
         return bucketDao.insert(bucket);
     }
 

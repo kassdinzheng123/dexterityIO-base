@@ -1,7 +1,12 @@
 package io.dexterity;
 
+import io.dexterity.config.MyConfig;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+import java.io.File;
 
 //@Slf4j
 //@EnableMethodCache(basePackages = "io.dexterity")
@@ -10,7 +15,15 @@ public class DexterityIOEntrance {
     public static void main(String[] args) {
         SpringApplication.run(DexterityIOEntrance.class);
     }
-
+    @Autowired
+    private MyConfig myConfig;
+    @PostConstruct
+    public void init() {
+        File folder = new File(MyConfig.path+"Resource\\lmdb");
+        if(!folder.exists()) {
+            folder.mkdirs();// 创建文件夹
+        }
+    }
     /*
       应用关闭前关闭一切Env
      */

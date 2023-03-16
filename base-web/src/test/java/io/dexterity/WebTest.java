@@ -2,6 +2,7 @@ package io.dexterity;
 
 import cn.hutool.crypto.digest.DigestUtil;
 import io.dexterity.client.DerbyClient;
+import io.dexterity.config.MyConfig;
 import io.dexterity.dao.WebDao;
 import io.dexterity.po.vo.RocksDBVo;
 import io.dexterity.service.WebService;
@@ -21,9 +22,26 @@ public class WebTest {
     private WebDao webDao;
     @Autowired
     private WebService webService;
-
-
-
+    @Autowired
+    MyConfig myConfig;
+    @Test
+    public void init() throws SQLException {
+        DerbyClient derbyClient = new DerbyClient();
+        storageApi.cfAll();
+//        derbyClient.deleteTable("BUCKET");
+        derbyClient.createTable(
+                "bucket",
+                "bucket_id VARCHAR(255) PRIMARY KEY NOT NULL",
+                "bucket_name VARCHAR(255) NOT NULL UNIQUE",
+                "access_authority VARCHAR(255) NOT NULL",
+                "domain_name VARCHAR(255) NOT NULL",
+                "region VARCHAR(255) NOT NULL",
+                "status INT NOT NULL",
+                "create_time VARCHAR(255) NOT NULL",
+                "tags VARCHAR(255)");
+        derbyClient.listTable();
+        derbyClient.close();
+    }
     @Test
     public void query() throws RocksDBException, SQLException {
         //RocksDB数据库查询
@@ -31,15 +49,11 @@ public class WebTest {
         System.out.println("default列族的总条数："+storageApi.getCount("default"));
         System.out.println("default列族所有的Key："+storageApi.getAllKey("default"));
 
-        System.out.println("test列族的总条数："+storageApi.getCount("test"));
-        System.out.println("test列族所有的Key："+storageApi.getAllKey("test"));
-
         //Derby数据库查询
         DerbyClient derbyClient = new DerbyClient();
         System.out.println("derby数据库中的所有表：");
         derbyClient.listTable();
         System.out.println("BUCKET表的总条数："+derbyClient.selectCount("BUCKET"));
-        System.out.println("CHUNK_INFO表的总条数："+derbyClient.selectCount("CHUNK_INFO"));
         derbyClient.close();
     }
 
@@ -47,8 +61,10 @@ public class WebTest {
     public void clear() throws RocksDBException {
         //删除rocksdb中的临时列族,chunkTmp
         storageApi.cfDelete("chunkTmp");
-        //删除derby中的临时信息,CHUNK_INFO
-        webDao.deleteChunkTemp();
+        storageApi.cfDelete("bucket1");
+        storageApi.cfDelete("bucket2");
+        storageApi.cfDelete("test");
+
     }
 
     @Test
@@ -76,7 +92,6 @@ public class WebTest {
         RocksDBVo rocksDBVo2 = storageApi.delete("bucket",key.getBytes());
         System.out.println(rocksDBVo2);
     }
-
     @Test
     void getSha256(){
         String sha256 = DigestUtil.sha256Hex(new File("C:\\Users\\warfr\\Downloads\\test.txt"));
