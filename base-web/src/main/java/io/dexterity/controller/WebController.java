@@ -56,7 +56,8 @@ public class WebController {
     @PostMapping("/object")
     public R<?> uploadToBucket(
             @RequestParam("chunk") MultipartFile chunk,//块的数据
-            @RequestParam("md5") String md5,//文件的md5值
+            @RequestParam("crypto") String crypto,//文件的sha256值
+            @RequestParam("chunkMd5") String chunkCrypto, //块的sha256值
             @RequestParam("index") Integer index, //块的序号
             @RequestParam("chunkTotal") Integer chunkTotal, //块的总数
             @RequestParam("fileSize") Long fileSize, //文件大小
@@ -65,16 +66,18 @@ public class WebController {
             @RequestParam("bucketName") String bucketName //存储桶
     ) throws RocksDBException, IOException {
         Map<String, Object> data = new HashMap<>();
-        webService.saveChunk(chunk,index,chunkTotal,chunkSize,bucketName);//保存分片信息
-        log.info("当前分片:"+index +" ,总分片数:"+chunkTotal+" ,文件名:"+fileName);
+        //保存分片信息
+        if(webService.saveChunk(chunk,index,chunkTotal,chunkSize,crypto,bucketName,fileName,fileSize,chunkCrypto)==1)
+            log.info("当前分片:"+index +" ,总分片数:"+chunkTotal+" ,文件名:"+fileName);
+        //校验分片的sha256
         if(webService.checkChunkAll()==chunkTotal){
             byte[] mergeBytes = webService.mergeChunk();//合并文件
             log.info("总校验和："+FileUtil.getMd5(mergeBytes));
-            if(!Objects.equals(FileUtil.getMd5(mergeBytes), md5)){
+            if(!Objects.equals(FileUtil.getMd5(mergeBytes), crypto)){
                 data.put("info","md5值校验不一致!");
                 return new R<>(200,"请求成功",data);
             }
-            webService.saveObject(mergeBytes,bucketName,fileName,md5,fileSize);//保存对象信息到rocksdb，并删除临时文件
+            webService.saveObject(mergeBytes,bucketName,fileName,crypto,fileSize);//保存对象信息到rocksdb，并删除临时文件
             data.put("info:","文件上传成功");
             return new R<>(200,"请求成功",data);
         }

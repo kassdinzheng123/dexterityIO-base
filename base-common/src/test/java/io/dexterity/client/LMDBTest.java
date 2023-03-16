@@ -1,19 +1,13 @@
 package io.dexterity.client;
 
-import cn.hutool.core.map.MapUtil;
-import io.dexterity.common.client.MultipleDBi;
-import io.dexterity.common.client.MultipleEnv;
-import io.dexterity.common.client.MultipleLmdb;
-import io.dexterity.common.client.entity.LMDBEnvSettings;
-import io.dexterity.common.client.entity.LMDBEnvSettingsBuilder;
-import io.dexterity.common.entity.MetaData;
-import io.dexterity.common.entity.constants.MetaDataConstants;
+import io.dexterity.entity.LMDBEnvSettings;
+import io.dexterity.entity.LMDBEnvSettingsBuilder;
+import io.dexterity.entity.constants.MetaDataConstants;
 import org.junit.jupiter.api.Test;
 import org.lmdbjava.Cursor;
 import org.lmdbjava.Env;
 import org.lmdbjava.Txn;
 
-import java.lang.reflect.Parameter;
 import java.nio.ByteBuffer;
 import java.util.*;
 
@@ -27,7 +21,7 @@ public class LMDBTest {
                 .maxDBInstance(1)
                 .maxReaders(100)
                 .maxSize(1024L * 1024L)
-                .filePosition("D:\\Resource\\lmdb-test").build();
+                .filePosition("E:\\Resource\\lmdb-test").build();
 
         MultipleEnv multipleEnv1 = MultipleLmdb.buildNewEnv(test);
         Env<ByteBuffer> env = multipleEnv1.getEnv();

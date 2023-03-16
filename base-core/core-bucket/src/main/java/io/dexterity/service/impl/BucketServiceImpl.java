@@ -5,11 +5,13 @@ import cn.hutool.core.util.IdUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import io.dexterity.client.RocksDBClient;
 import io.dexterity.dao.BucketDao;
 import io.dexterity.exception.MyException;
 import io.dexterity.po.pojo.Bucket;
 import io.dexterity.po.vo.BucketVO;
 import io.dexterity.service.BucketService;
+import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,8 +22,10 @@ public class BucketServiceImpl extends ServiceImpl<BucketDao, Bucket> implements
     @Autowired
     private BucketDao bucketDao;
 
+
+
     @Override
-    public int createBucket(BucketVO bucketVO) {
+    public int createBucket(BucketVO bucketVO) throws RocksDBException {
         Bucket bucket = new Bucket();
         BeanUtil.copyProperties(bucketVO,bucket);
         bucket.setTags(bucketVO.getTags().toString());
@@ -35,6 +39,7 @@ public class BucketServiceImpl extends ServiceImpl<BucketDao, Bucket> implements
         } else if (bucket.getRegion().isBlank()) {
             throw new MyException(500, "地区不能为空");
         }
+        RocksDBClient.cfAddIfNotExist(bucket.getBucketName());
         return bucketDao.insert(bucket);
     }
 

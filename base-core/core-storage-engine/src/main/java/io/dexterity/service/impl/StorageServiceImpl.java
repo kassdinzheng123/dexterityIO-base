@@ -5,6 +5,7 @@ import io.dexterity.po.vo.RocksDBVo;
 import io.dexterity.service.StorageService;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
+import org.rocksdb.TransactionDB;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -20,6 +21,11 @@ public class StorageServiceImpl implements StorageService {
     @Override
     public RocksIterator getIterator(String chunkTmp) throws RocksDBException {
         return RocksDBClient.getIterator(chunkTmp);
+    }
+
+    @Override
+    public TransactionDB getTransaction() throws RocksDBException {
+        return RocksDBClient.openTransaction();
     }
 
     public int cfDelete(String cfName) throws RocksDBException {
@@ -85,7 +91,7 @@ public class StorageServiceImpl implements StorageService {
         return RocksDBClient.getAllKey(cfName);
     }
 
-    public int getCount( String cfName) throws RocksDBException {
+    public int getCount(String cfName) throws RocksDBException {
         return RocksDBClient.getCount(cfName);
     }
 }

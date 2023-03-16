@@ -4,13 +4,13 @@ import cn.hutool.core.convert.Convert;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.dexterity.MetaDataApi;
 import io.dexterity.StorageApi;
+import io.dexterity.annotation.RocksDBTransactional;
 import io.dexterity.dao.WebDao;
 import io.dexterity.po.vo.ChunkVO;
 import io.dexterity.po.vo.RocksDBVo;
 import io.dexterity.service.WebService;
 import lombok.extern.slf4j.Slf4j;
-import org.rocksdb.RocksDBException;
-import org.rocksdb.RocksIterator;
+import org.rocksdb.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,12 +37,14 @@ public class WebServiceImpl extends ServiceImpl<WebDao, ChunkVO> implements WebS
     @Autowired
     private WebDao webDao;
     @Override
-    public Integer saveChunk(MultipartFile chunk, Integer index, Integer chunkTotal, Long chunkSize, String bucketName) throws RocksDBException, IOException {
-        //分块信息先临时存在derby中，CHUNK_INFO表
+    public Integer saveChunk(MultipartFile chunk, Integer index,
+                             Integer chunkTotal, Long chunkSize,
+                             String crypto, String bucketName,
+                             String fileName,Long fileSize,String chunkCrypto) throws RocksDBException, IOException {
+        // 分块信息先临时存在derby中，CHUNK_INFO表 TODO 后面要存到lmdb里面(key-crypto,value-Map)
         webDao.insert(new ChunkVO(index,chunkTotal,chunkSize,bucketName));
-        //分块数据临时存在RocksDB中，chunkTmp列族
-        storageApi.cfAdd("chunkTmp");
-        storageApi.put(new RocksDBVo("chunkTmp", Convert.toPrimitiveByteArray(index),chunk.getBytes()));
+        // 分块数据以（crypto-chunk）存RocksDB中
+        storageApi.put(new RocksDBVo(bucketName, Convert.toPrimitiveByteArray(crypto),chunk.getBytes()));
         return 1;
     }
 
@@ -86,8 +88,13 @@ public class WebServiceImpl extends ServiceImpl<WebDao, ChunkVO> implements WebS
         return mergedData;
     }
 
+
     @Override
+    @RocksDBTransactional
     public int saveObject(byte[] object,String bucketName,String fileName,String md5,Long fileSize) throws RocksDBException {
+        TransactionDB txnDB = storageApi.getTransaction();
+        Transaction txn1 = txnDB.beginTransaction(new WriteOptions());
+
         //删除rocksdb中的临时列族,chunkTmp
         storageApi.cfDelete("chunkTmp");
         //删除derby中 的临时信息,CHUNK_INFO
@@ -97,6 +104,7 @@ public class WebServiceImpl extends ServiceImpl<WebDao, ChunkVO> implements WebS
         HashMap<String,String> maps = new HashMap<>();
         maps.put("fileSize",fileSize.toString());
         maps.put("md5",md5);
+        int a = 1/0;
         //保存对象的元数据信息到lmdb
 //        metaDataApi.insertNewMetadata(new MetaData(fileName,maps),bucketName);
         return 1;

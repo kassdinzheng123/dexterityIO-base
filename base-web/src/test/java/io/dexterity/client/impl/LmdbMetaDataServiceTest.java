@@ -28,7 +28,7 @@ class LmdbMetaDataServiceTest {
                 .maxReaders(100)
                 .maxSize(1024 * 1024 * 5L)
                 .maxDBInstance(30)
-                .filePosition("D:\\Resource\\metadata-test")
+                .filePosition("E:\\Resource\\metadata-test")
                 .build();
         MultipleEnv multipleEnv = MultipleLmdb.buildNewEnv(settings);
     }

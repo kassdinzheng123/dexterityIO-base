@@ -39,7 +39,6 @@ public class WebTest {
         System.out.println("BUCKET表的总条数："+derbyClient.selectCount("BUCKET"));
         System.out.println("CHUNK_INFO表的总条数："+derbyClient.selectCount("CHUNK_INFO"));
         derbyClient.close();
-
     }
 
     @Test

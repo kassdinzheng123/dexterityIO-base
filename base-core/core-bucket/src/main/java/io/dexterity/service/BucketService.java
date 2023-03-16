@@ -3,6 +3,7 @@ package io.dexterity.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import io.dexterity.po.pojo.Bucket;
 import io.dexterity.po.vo.BucketVO;
+import org.rocksdb.RocksDBException;
 
 import java.util.List;
 
@@ -10,7 +11,7 @@ public interface BucketService extends IService<Bucket> {
     /**
      * 创建存储桶
      */
-    int createBucket(BucketVO bucketVO);
+    int createBucket(BucketVO bucketVO) throws RocksDBException;
 
     /**
      * 删除存储桶（id）

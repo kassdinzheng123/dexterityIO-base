@@ -138,7 +138,7 @@ public class MultipleLmdb {
                 .setMapSize(1024L*1024) // 容量为1MB
                 .setMaxDbs(10) // 数据库实例
                 .setMaxReaders(256) // 读事务
-                .open(new File("D:\\Resource\\lmdb"));
+                .open(new File("E:\\Resource\\lmdb"));
         MultipleEnv multipleEnv = new MultipleEnv("mainEnv", mainEnv);
         envs.put("mainEnv", multipleEnv);
         try {
