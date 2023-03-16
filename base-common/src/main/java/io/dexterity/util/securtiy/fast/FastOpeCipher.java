@@ -44,7 +44,6 @@ public class FastOpeCipher implements Cipher {
 		double e = rnd.nextDouble() * alpha;
 		long n = (long) Math.ceil((double) tau / (beta * Math.pow(e, 8)));
 		long k = rnd.nextLong() & 0x7fffffffffffffffL;
-		log.info("{},{},{},{}",alpha,e,k,n);
 
 		return new FastOpeKey(n, alpha, e, k);
 	}
@@ -56,7 +55,6 @@ public class FastOpeCipher implements Cipher {
 		double e = Double.parseDouble(split[1]);
 		long n = Long.parseLong(split[3]);
 		long k = Long.parseLong(split[2]);
-		log.info("{},{},{},{}",alpha,e,k,n);
 
 		return new FastOpeKey(n, alpha, e, k);
 	}
@@ -70,8 +68,7 @@ public class FastOpeCipher implements Cipher {
 		long k = buffer.getLong() & 0x7fffffffffffffffL;
 		long n = buffer.getLong();
 
-		log.info("{},{},{},{}",alpha,e,k,n);
-		
+
 		return new FastOpeKey(n, alpha, e, k);
 	}
 }

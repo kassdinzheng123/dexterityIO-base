@@ -178,6 +178,37 @@ public class LMDBTest {
 
     }
 
+    @Test
+    public void transactionManager() throws MultipleEnv.LMDBCreateFailedException {
+        MultipleEnv multipleEnv = MultipleLmdb.envs.get("metadata-test-bucket");
+        MultipleDBi multipleDBi = multipleEnv.buildDBInstance("test1",false,false);
+
+
+        multipleDBi.db.delete(multipleDBi.byteKey("test"));
+        try (Txn<ByteBuffer> txn = multipleEnv.getEnv().txnWrite()) {
+            try (Txn<ByteBuffer> byteBufferTxn = multipleEnv.getEnv().txn(txn)) {
+                try (Txn<ByteBuffer> bufferTxn = multipleEnv.getEnv().txn(byteBufferTxn)) {
+                    System.out.println(1);
+                }
+            }
+        }
+
+        MultipleDBi test2Dup = multipleEnv.buildDBInstance("test3",false,true);
+
+        Map<String,List<String>> hash = new HashMap<>();
+        hash.put("1234",List.of("tttt","wwww","rrrr","qqqq"));
+        test2Dup.putAll(hash);
+
+        MultipleDBi test2UnDup = multipleEnv.buildDBInstance("test2",false,false);
+        List<Map.Entry<String, String>> all = test2Dup.getAll();
+        System.out.println(all);
+
+        System.out.println(test2Dup.db.listFlags(multipleEnv.readTxn()));
+
+        System.out.println(test2Dup.getDuplicatedData("1234"));
+
+    }
+
 }
 
 

@@ -86,6 +86,7 @@ public interface Key {
 	}
 
 	public default String decryptString(byte[] ciphertext) {
+		if (ciphertext.length == 0) return "";
 		return Encoder.decodeString(decrypt(ciphertext));
 	}
 }

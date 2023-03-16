@@ -1,9 +1,11 @@
 package io.dexterity.service;
 
-import io.dexterity.annotation.BucketName;
+import io.dexterity.client.MultipleEnv;
 import io.dexterity.entity.MetaData;
+import org.lmdbjava.Txn;
 import org.springframework.stereotype.Service;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -14,15 +16,14 @@ import java.util.Set;
  */
 @Service
 public interface MetaDataService {
-    void insertNewMetadata(MetaData metaData,String bucketKey);
-    void deleteMetadata(List<String> metadataKey,String bucketKey);
-    Set<String> selectByMetaData(MetaData metaData, String bucketKey);
-    void addNewMetadata(MetaData matcher,String bucketKey,String newMdKey,String newMdValue);
-    void insertPatch(List<MetaData> metaData, @BucketName String bucketKey);
-    Map<String,MetaData> selectMdByKeys(List<String> key, String bucketKey);
-    Map<String,MetaData> selectMdByMdRange(String metadataKey, String lb, String ub, String bucketKey);
-    Map<String,MetaData> selectMdByKeyRange(String lb, String ub, String bucketKey);
-    Map<String,MetaData> selectMdByKeyPrefix(String prefix,String bucketKey);
-
+    void insertNewMetadata(MetaData metaData, MultipleEnv env, Txn<ByteBuffer> parent);
+    void  deleteMetadata(List<String> metadataKey,MultipleEnv multipleEnv,Txn<ByteBuffer> parent);
+    void addNewMetadata(MetaData matcher, MultipleEnv multipleEnv, Txn<ByteBuffer> parent, String newMdKey, String newMdValue);
+    Set<String> selectByMetaData(MetaData metaData,MultipleEnv multipleEnv,Txn<ByteBuffer> parent);
+    void insertPatch(List<MetaData> metaData,  MultipleEnv multipleEnv,Txn<ByteBuffer> parent);
+    Map<String,MetaData> selectMdByKeys(List<String> key,MultipleEnv multipleEnv,Txn<ByteBuffer> parent);
+    Map<String, MetaData> selectMdByMdRange(String metadataKey, String lb,String ub, String prefix, MultipleEnv multipleEnv, Txn<ByteBuffer> parent);
+    Map<String, MetaData> selectMdByKeyRange(String lb,String ub, String prefix, MultipleEnv multipleEnv, Txn<ByteBuffer> parent);
+    Map<String, MetaData> selectMdByKeyPrefix(String prefix, MultipleEnv multipleEnv,Txn<ByteBuffer> parent);
 
 }

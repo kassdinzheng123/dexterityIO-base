@@ -7,6 +7,8 @@ import java.util.Map;
 
 public class MetaData {
 
+
+
     public String key;
     public final Map<String,String> metaDataMap;
 
@@ -73,5 +75,13 @@ public class MetaData {
 
     public void setMIME(String mime){
         metaDataMap.put(MetaDataConstants.MIME,mime);
+    }
+
+    @Override
+    public String toString() {
+        return "MetaData{" +
+                "key='" + key + '\'' +
+                ", metaDataMap=" + metaDataMap +
+                '}';
     }
 }
