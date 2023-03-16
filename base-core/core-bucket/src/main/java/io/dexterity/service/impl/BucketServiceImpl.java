@@ -17,6 +17,7 @@ import io.dexterity.po.vo.BucketVO;
 import io.dexterity.service.BucketService;
 import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,7 +26,8 @@ import java.util.List;
 public class BucketServiceImpl extends ServiceImpl<BucketDao, Bucket> implements BucketService {
     @Autowired
     private BucketDao bucketDao;
-
+    @Value("${local.path}")
+    private static String path;
 
 
     @Override
@@ -43,10 +45,10 @@ public class BucketServiceImpl extends ServiceImpl<BucketDao, Bucket> implements
         } else if (bucket.getRegion().isBlank()) {
             throw new MyException(500, "地区不能为空");
         }
-        FileUtil.mkdir("E:\\Resource\\"+bucket.getBucketName());
+        FileUtil.mkdir(path+"Resource\\"+bucket.getBucketName());
         LMDBEnvSettings build = LMDBEnvSettingsBuilder.startBuild()
                 .envName(bucket.getBucketName())
-                .filePosition("E:\\Resource\\"+bucket.getBucketName())
+                .filePosition(path+"Resource\\"+bucket.getBucketName())
                 .maxReaders(100)
                 .maxDBInstance(100)
                 .maxSize(1024 * 1024 * 10L)

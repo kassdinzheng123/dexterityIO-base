@@ -1,6 +1,9 @@
 server:
   port: 9090
 
+local:
+  path: E:\\
+
 spring:
   datasource:
     dynamic:
@@ -9,7 +12,7 @@ spring:
       datasource:
         derby:
           driver-class-name: org.apache.derby.iapi.jdbc.AutoloadedDriver
-          url: jdbc:derby:E:\Derby;create=true
+          url: jdbc:derby:${local.path}Derby;create=true
 #        mysql:
 #          driver-class-name: com.mysql.cj.jdbc.Driver
 #          url: jdbc:mysql://localhost:3306/swpu_oss_0.2?characterEncoding=utf-8&serverTimezone=UTC

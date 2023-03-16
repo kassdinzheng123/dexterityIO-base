@@ -12,6 +12,7 @@ import io.dexterity.util.StringFormatUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.*;
@@ -20,7 +21,8 @@ import java.util.concurrent.*;
 @SpringBootTest(classes = DexterityIOEntrance.class)
 @Slf4j
 class LmdbMetaDataServiceTest {
-
+    @Value("${local.path}")
+    private static String path;
     @Resource
     private TestBean testBean;
 
@@ -33,7 +35,7 @@ class LmdbMetaDataServiceTest {
     public void build(){
         LMDBEnvSettings build = LMDBEnvSettingsBuilder.startBuild()
                 .envName("metadata-test-bucket")
-                .filePosition("E:\\Resource\\metadata-test")
+                .filePosition(path+"Resource\\metadata-test")
                 .maxReaders(100)
                 .maxDBInstance(100)
                 .maxSize(1024 * 1024 * 10L)

@@ -7,12 +7,14 @@ import org.junit.jupiter.api.Test;
 import org.lmdbjava.Cursor;
 import org.lmdbjava.Env;
 import org.lmdbjava.Txn;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.nio.ByteBuffer;
 import java.util.*;
 
 public class LMDBTest {
-
+    @Value("${local.path}")
+    private static String path;
     @Test
     public void expandTest() throws MultipleEnv.LMDBCreateFailedException {
         MultipleLmdb.initMainEnv();
@@ -21,7 +23,7 @@ public class LMDBTest {
                 .maxDBInstance(1)
                 .maxReaders(100)
                 .maxSize(1024L * 1024L)
-                .filePosition("E:\\Resource\\lmdb-test").build();
+                .filePosition(path+"Resource\\lmdb-test").build();
 
         MultipleEnv multipleEnv1 = MultipleLmdb.buildNewEnv(test);
         Env<ByteBuffer> env = multipleEnv1.getEnv();

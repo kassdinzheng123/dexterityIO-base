@@ -1,9 +1,13 @@
 package io.dexterity.client;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import java.sql.*;
 
 public class DerbyClient {
-    private static final String DB_URL = "jdbc:derby:E:\\Derby;create=true";
+    @Value("${local.path}")
+    private static String path;
+    private static final String DB_URL = "jdbc:derby:"+path+"Derby;create=true";
     private Connection conn;
     private Statement stmt;
     public DerbyClient() throws SQLException {

@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.util.RamUsageEstimator;
 import org.lmdbjava.Env;
 import org.lmdbjava.Txn;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -28,7 +29,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @Component
 public class MultipleLmdb {
-
+    @Value("${local.path}")
+    private static String path;
 
     private static final String LMDB_INFO_DB = "lmdb-infos";
     private static final String LMDB_ENVS_KEY = "lmdb-envs";
@@ -147,7 +149,7 @@ public class MultipleLmdb {
                 .setMapSize(1024L*1024) // 容量为1MB
                 .setMaxDbs(10) // 数据库实例
                 .setMaxReaders(256) // 读事务
-                .open(new File("E:\\Resource\\lmdb"));
+                .open(new File(path+"Resource\\lmdb"));
         MultipleEnv multipleEnv = new MultipleEnv("mainEnv", mainEnv);
         envs.put("mainEnv", multipleEnv);
         try {

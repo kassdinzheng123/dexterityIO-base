@@ -2,6 +2,7 @@ package io.dexterity.client;
 
 import lombok.extern.slf4j.Slf4j;
 import org.rocksdb.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.ObjectUtils;
 
 import java.nio.charset.StandardCharsets;
@@ -13,6 +14,8 @@ import java.util.stream.IntStream;
 
 @Slf4j
 public class RocksDBClient {
+    @Value("${local.path}")
+    private static String path;
     private static RocksDB rocksDB;
     private static Options options;
     private static String rocksDBPath; // RocksDB文件目录
@@ -28,7 +31,7 @@ public class RocksDBClient {
             String osName = System.getProperty("os.name"); // 获取当前操作系统:Windows 11
             log.info("osName:{}", osName);
             if (osName.toLowerCase().contains("windows")) {
-                rocksDBPath = "E:\\RocksDB"; // 指定windows系统下RocksDB文件目录
+                rocksDBPath = path+"RocksDB"; // 指定windows系统下RocksDB文件目录
             } else {
                 rocksDBPath = "/usr/local/rocksdb"; // 指定linux系统下RocksDB文件目录
             }
