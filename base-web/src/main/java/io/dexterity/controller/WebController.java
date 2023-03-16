@@ -35,7 +35,7 @@ public class WebController {
 
     @Operation(summary = "创建存储桶", description = "创建一个新的存储桶")
     @PostMapping("/bucket")
-    public R<?> createBucket(@RequestBody BucketVO bucket){
+    public R<?> createBucket(@RequestBody BucketVO bucket) throws RocksDBException {
         return new R<>(200,"请求成功",bucketApi.createBucket(bucket));
     }
 
