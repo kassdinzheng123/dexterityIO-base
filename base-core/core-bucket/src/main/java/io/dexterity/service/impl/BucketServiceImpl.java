@@ -34,7 +34,7 @@ public class BucketServiceImpl extends ServiceImpl<BucketDao, Bucket> implements
     @Override
     public int createBucket(BucketVO bucketVO) throws RocksDBException {
         QueryWrapper<Bucket> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("bucketName",bucketVO.getBucketName());
+        queryWrapper.eq("bucket_name",bucketVO.getBucketName());
 
         if (bucketDao.selectOne(queryWrapper)!=null){
             throw new MyException(500,"存储桶名称不能重复");
