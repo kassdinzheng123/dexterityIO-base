@@ -40,8 +40,8 @@ public class WebController {
 
     @Operation(summary = "删除存储桶", description = "根据前端传来的存储桶id删除存储桶")
     @DeleteMapping("/bucket")
-    public R<?> deleteBucket(@RequestParam("bucketId")String bucketId){
-        return new R<>(200,"请求成功",bucketApi.deleteBucket(bucketId));
+    public R<?> deleteBucket(@RequestParam("bucketName")String bucketName) throws RocksDBException {
+        return new R<>(200,"请求成功",bucketApi.deleteBucket(bucketName));
     }
 
     @Operation(summary = "更新存储桶状态", description = "通过前端传来的值进行更改存储桶状态")

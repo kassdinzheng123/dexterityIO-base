@@ -16,7 +16,7 @@ public interface BucketService extends IService<Bucket> {
     /**
      * 删除存储桶（id）
      */
-    int deleteBucket(String bucketId);
+    int deleteBucket(String bucketName) throws RocksDBException;
 
     /**
      * 存储桶状态（id）

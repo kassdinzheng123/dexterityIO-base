@@ -20,8 +20,8 @@ public class BucketApiImpl implements BucketApi {
     }
 
     @Override
-    public int deleteBucket(String bucketId) {
-        return bucketService.deleteBucket(bucketId);
+    public int deleteBucket(String bucketName) throws RocksDBException {
+        return bucketService.deleteBucket(bucketName);
     }
 
     @Override
