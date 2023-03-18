@@ -1,7 +1,8 @@
 package io.dexterity;
 
-import io.dexterity.client.DerbyClient;
+
 import io.dexterity.config.MyConfig;
+import io.dexterity.po.pojo.DerbyClient;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
