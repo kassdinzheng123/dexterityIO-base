@@ -9,12 +9,22 @@
         <version>1.0</version>
     </parent>
 
-    <artifactId>base-security</artifactId>
+    <artifactId>base-metadata</artifactId>
 
     <properties>
         <maven.compiler.source>19</maven.compiler.source>
         <maven.compiler.target>19</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.dexterity</groupId>
+            <artifactId>base-storage</artifactId>
+            <version>1.0</version>
+        </dependency>
+
+
+    </dependencies>
 
 </project>

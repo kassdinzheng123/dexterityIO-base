@@ -29,10 +29,7 @@
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.lmdbjava/lmdbjava -->
-        <dependency>
-            <groupId>org.rocksdb</groupId>
-            <artifactId>rocksdbjni</artifactId>
-        </dependency>
+
 
         <dependency>
             <groupId>com.google.guava</groupId>

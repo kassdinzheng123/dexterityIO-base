@@ -13,8 +13,9 @@
     <modules>
         <module>base-core</module>
         <module>base-web</module>
-        <module>base-security</module>
         <module>base-common</module>
+        <module>base-metadata</module>
+        <module>base-storage</module>
     </modules>
 
     <properties>

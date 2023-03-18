@@ -94,7 +94,7 @@ public class WebTest {
     }
     @Test
     void getSha256(){
-        String sha256 = DigestUtil.sha256Hex(new File("C:\\Users\\warfr\\Downloads\\test.txt"));
+        String sha256 = DigestUtil.sha256Hex(new File("C:\\Users\\warfr\\Downloads\\princessZeldaLora_v1.safetensors"));
         System.out.println(sha256);
     }
 }

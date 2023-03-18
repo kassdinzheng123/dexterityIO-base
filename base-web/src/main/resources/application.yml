@@ -20,8 +20,8 @@ spring:
 #          password: 123456
   servlet:
     multipart:
-      max-file-size: 100MB # 配置单个上传文件的大小的限制
-      max-request-size: 200MB # 配置在一次请求中上传文件的总容量的限制
+      max-file-size: 500MB # 配置单个上传文件的大小的限制
+      max-request-size: 500MB # 配置在一次请求中上传文件的总容量的限制
   aop:
     auto: true
     proxy-target-class: true
