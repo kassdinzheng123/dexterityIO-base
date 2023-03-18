@@ -3,6 +3,7 @@ package io.dexterity.impl;
 import io.dexterity.BucketApi;
 import io.dexterity.po.vo.BucketVO;
 import io.dexterity.service.BucketService;
+import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,13 +15,13 @@ public class BucketApiImpl implements BucketApi {
     private BucketService bucketService;
 
     @Override
-    public int createBucket(BucketVO bucketVO) {
+    public int createBucket(BucketVO bucketVO) throws RocksDBException {
         return bucketService.createBucket(bucketVO);
     }
 
     @Override
-    public int deleteBucket(String bucketId) {
-        return bucketService.deleteBucket(bucketId);
+    public int deleteBucket(String bucketName) throws RocksDBException {
+        return bucketService.deleteBucket(bucketName);
     }
 
     @Override

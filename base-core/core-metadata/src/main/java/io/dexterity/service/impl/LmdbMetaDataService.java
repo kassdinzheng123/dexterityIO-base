@@ -65,7 +65,7 @@ public class LmdbMetaDataService implements MetaDataService {
             //然后做向后映射 value和key 进行映射方便查询
             for (var entry : metaData.metaDataMap.entrySet()) {
                 MultipleDBi metaDBi = env.getDB(entry.getKey());
-                if (entry.getValue() != null)
+                if (entry.getValue() != null && metaDBi!=null)
                     metaDBi.putAll(txn, MapUtil.of(entry.getValue(), Collections.singletonList(metaData.key)));
             }
             txn.commit();
@@ -268,7 +268,6 @@ public class LmdbMetaDataService implements MetaDataService {
      * 其他的元数据值保持为空即可
      *
      * @param metaData
-     * @param bucketKey
      * @return
      */
     @Override

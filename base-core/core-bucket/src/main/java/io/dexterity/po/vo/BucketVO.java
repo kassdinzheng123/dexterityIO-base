@@ -1,5 +1,6 @@
 package io.dexterity.po.vo;
 
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.json.JSONArray;
 import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.AllArgsConstructor;
@@ -35,6 +36,10 @@ public class BucketVO {
      * 存储桶状态
      */
     private Integer status = 1;
+    /**
+     * 创建时间
+     */
+    private String createTime = DateUtil.today();
     /**
      * 存储桶标签,KV
      */

@@ -1,10 +1,10 @@
 package io.dexterity.controller;
 
 import io.dexterity.BucketApi;
+import io.dexterity.entity.constants.MetaDataConstants;
 import io.dexterity.po.pojo.R;
 import io.dexterity.po.vo.BucketVO;
 import io.dexterity.service.WebService;
-import io.dexterity.utils.FileUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 @Slf4j
 @RestController
 @RequestMapping("/web")
@@ -35,14 +34,14 @@ public class WebController {
 
     @Operation(summary = "创建存储桶", description = "创建一个新的存储桶")
     @PostMapping("/bucket")
-    public R<?> createBucket(@RequestBody BucketVO bucket){
+    public R<?> createBucket(@RequestBody BucketVO bucket) throws RocksDBException {
         return new R<>(200,"请求成功",bucketApi.createBucket(bucket));
     }
 
     @Operation(summary = "删除存储桶", description = "根据前端传来的存储桶id删除存储桶")
     @DeleteMapping("/bucket")
-    public R<?> deleteBucket(@RequestParam("bucketId")String bucketId){
-        return new R<>(200,"请求成功",bucketApi.deleteBucket(bucketId));
+    public R<?> deleteBucket(@RequestParam("bucketName")String bucketName) throws RocksDBException {
+        return new R<>(200,"请求成功",bucketApi.deleteBucket(bucketName));
     }
 
     @Operation(summary = "更新存储桶状态", description = "通过前端传来的值进行更改存储桶状态")
@@ -55,8 +54,9 @@ public class WebController {
     @Operation(summary = "上传对象", description = "上传对象到指定存储桶")
     @PostMapping("/object")
     public R<?> uploadToBucket(
-            @RequestParam("chunk") MultipartFile chunk,//块的数据
-            @RequestParam("md5") String md5,//文件的md5值
+            @RequestParam("chunk") MultipartFile chunk, //块的数据
+            @RequestParam("crypto") String crypto, //文件的sha256值
+            @RequestParam("chunkCrypto") String chunkCrypto, //块的sha256值
             @RequestParam("index") Integer index, //块的序号
             @RequestParam("chunkTotal") Integer chunkTotal, //块的总数
             @RequestParam("fileSize") Long fileSize, //文件大小
@@ -65,21 +65,30 @@ public class WebController {
             @RequestParam("bucketName") String bucketName //存储桶
     ) throws RocksDBException, IOException {
         Map<String, Object> data = new HashMap<>();
-        webService.saveChunk(chunk,index,chunkTotal,chunkSize,bucketName);//保存分片信息
-        log.info("当前分片:"+index +" ,总分片数:"+chunkTotal+" ,文件名:"+fileName);
-        if(webService.checkChunkAll()==chunkTotal){
-            byte[] mergeBytes = webService.mergeChunk();//合并文件
-            log.info("总校验和："+FileUtil.getMd5(mergeBytes));
-            if(!Objects.equals(FileUtil.getMd5(mergeBytes), md5)){
-                data.put("info","md5值校验不一致!");
-                return new R<>(200,"请求成功",data);
-            }
-            webService.saveObject(mergeBytes,bucketName,fileName,md5,fileSize);//保存对象信息到rocksdb，并删除临时文件
-            data.put("info:","文件上传成功");
-            return new R<>(200,"请求成功",data);
+        List<String> dup = List.of("fileName", "fileSize", "chunk","chunkTotal","bucketName");
+        List<String> unDup = List.of(MetaDataConstants.LMDB_METADATA_KEY);
+        // 保存分片信息
+        if(webService.saveChunk(chunk,index,chunkTotal, chunkSize,crypto,
+                bucketName,fileName, fileSize,chunkCrypto,dup,unDup)==1){
+            log.info("当前分片:"+index +" ,总分片数:"+chunkTotal+" ,文件名:"+fileName);
+            data.put("sha256",chunkCrypto);
+            return new R<>(200,"分片上传成功",data);
+        }else{
+            return new R<>(500,"分片校验失败");
         }
-        data.put("index:",index);
-        return new R<>(200,"请求成功",data);
+
+
+//        if(webService.checkChunkAll()==chunkTotal){
+//            byte[] mergeBytes = webService.mergeChunk(); // 合并文件
+//            log.info("总校验和："+FileUtil.getMd5(mergeBytes));
+//            if(!Objects.equals(FileUtil.getMd5(mergeBytes), crypto)){
+//                data.put("info","md5值校验不一致!");
+//                return new R<>(200,"请求成功",data);
+//            }
+//            webService.saveObject(mergeBytes,bucketName,fileName,crypto,fileSize); // 保存对象信息到rocksdb，并删除临时文件
+//            data.put("info:","文件上传成功");
+//            return new R<>(200,"请求成功",data);
+//        }
     }
 
     @Operation(summary = "查询对象列表", description = "查询某存储桶中的对象列表")
@@ -92,10 +101,11 @@ public class WebController {
 
     @Operation(summary = "检查对象是否上传", description = "根据前端传来的MD5查询某存储桶的某对象是否已上传")
     @GetMapping("/object/check")
-    public R<?> checkObject(@RequestParam("md5") String md5){
-        log.info("对象MD5:"+md5);
-        // 首先检查对象是否存在 TODO lmdb去查是否存在元数据，先默认为false
-        Boolean isUploaded = webService.findObjByMD5(md5);
+    public R<?> checkObject(@RequestParam("crypto") String crypto,
+                            @RequestParam("bucketName")String bucketName){
+        log.info("对象sha256:"+crypto);
+        // 首先检查对象是否存在
+        Boolean isUploaded = webService.findObjByCrypto(crypto,bucketName);
 
         // 定义一个返回值集合
         Map<String, Object> data = new HashMap<>();
@@ -110,7 +120,7 @@ public class WebController {
         // 若存在分片，则执行断点续传
         // 若不存在分片，则按照正常上传
         //TODO 先默认chunkList为空
-        List<Integer> chunkList = webService.findChunkListByMD5(md5);
+        List<Integer> chunkList = webService.findChunkListByMD5(crypto);
         if(chunkList.size()!=0){
             data.put("chunkList",chunkList);
             data.put("info","执行断点续传");

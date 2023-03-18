@@ -1,19 +1,30 @@
 package io.dexterity.client;
 
+import io.dexterity.config.MyConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.rocksdb.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
 
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Slf4j
+@Component
 public class RocksDBClient {
+    @Autowired
+    MyConfig myConfig;
     private static RocksDB rocksDB;
+    private static Options options;
+    private static String rocksDBPath; // RocksDB文件目录
     public static ConcurrentMap<String, ColumnFamilyHandle> columnFamilyHandleMap = new ConcurrentHashMap<>(); //数据库列族(表)集合
     public static int GET_KEYS_BATCH_SIZE = 100000;
     private RocksDBClient() {
@@ -25,14 +36,13 @@ public class RocksDBClient {
         try{
             String osName = System.getProperty("os.name"); // 获取当前操作系统:Windows 11
             log.info("osName:{}", osName);
-            String rocksDBPath; // RocksDB文件目录
             if (osName.toLowerCase().contains("windows")) {
-                rocksDBPath = "E:\\RocksDB"; // 指定windows系统下RocksDB文件目录
+                rocksDBPath = MyConfig.path+"RocksDB"; // 指定windows系统下RocksDB文件目录
             } else {
                 rocksDBPath = "/usr/local/rocksdb"; // 指定linux系统下RocksDB文件目录
             }
             RocksDB.loadLibrary(); // 加载RocksDB c++库的静态方法
-            Options options = new Options(); // Options类包含一组可配置的DB选项,决定数据库的行为
+            options = new Options(); // Options类包含一组可配置的DB选项,决定数据库的行为
             options.setCreateIfMissing(true); // 如果数据库不存在则创建
             List<byte[]> cfArr = RocksDB.listColumnFamilies(options, rocksDBPath); // 初始化所有已存在列族
             List<ColumnFamilyDescriptor> columnFamilyDescriptors = new ArrayList<>(); // ColumnFamilyDescriptor集合
@@ -224,6 +234,11 @@ public class RocksDBClient {
             throw new IllegalArgumentException("Invalid column family: " + columnFamily);
         }
         return rocksDB.newIterator(columnFamilyHandle);
+    }
+
+    public static TransactionDB openTransaction() throws RocksDBException {
+        // 打开TransactionDB实例
+        return TransactionDB.open(options, new TransactionDBOptions(), rocksDBPath);
     }
 
 }

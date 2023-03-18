@@ -3,6 +3,7 @@ package io.dexterity.client;
 import cn.hutool.core.bean.BeanUtil;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import io.dexterity.config.MyConfig;
 import io.dexterity.entity.LMDBEnvSettings;
 import io.dexterity.entity.LMDBEnvSettingsBuilder;
 import lombok.Getter;
@@ -10,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.util.RamUsageEstimator;
 import org.lmdbjava.Env;
 import org.lmdbjava.Txn;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -28,8 +30,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @Component
 public class MultipleLmdb {
-
-
     private static final String LMDB_INFO_DB = "lmdb-infos";
     private static final String LMDB_ENVS_KEY = "lmdb-envs";
 
@@ -141,13 +141,16 @@ public class MultipleLmdb {
     /**
      * 创建主Env，这个Env将保存所有其他存储桶Env的信息
      */
+
+    @Autowired
+    MyConfig myConfig;
     public static void initMainEnv(){
         //初始化 mainEnv
         mainEnv = Env.create()
                 .setMapSize(1024L*1024) // 容量为1MB
                 .setMaxDbs(10) // 数据库实例
                 .setMaxReaders(256) // 读事务
-                .open(new File("D:\\Resource\\lmdb"));
+                .open(new File(MyConfig.path+"Resource\\lmdb"));
         MultipleEnv multipleEnv = new MultipleEnv("mainEnv", mainEnv);
         envs.put("mainEnv", multipleEnv);
         try {

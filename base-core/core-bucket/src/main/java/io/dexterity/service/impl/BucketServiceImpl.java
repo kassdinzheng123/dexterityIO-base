@@ -1,15 +1,23 @@
 package io.dexterity.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import io.dexterity.client.MultipleLmdb;
+import io.dexterity.client.RocksDBClient;
+import io.dexterity.config.MyConfig;
 import io.dexterity.dao.BucketDao;
+import io.dexterity.entity.LMDBEnvSettings;
+import io.dexterity.entity.LMDBEnvSettingsBuilder;
 import io.dexterity.exception.MyException;
 import io.dexterity.po.pojo.Bucket;
 import io.dexterity.po.vo.BucketVO;
 import io.dexterity.service.BucketService;
+import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,28 +27,57 @@ import java.util.List;
 public class BucketServiceImpl extends ServiceImpl<BucketDao, Bucket> implements BucketService {
     @Autowired
     private BucketDao bucketDao;
+    @Autowired
+    MyConfig myConfig;
+
 
     @Override
-    public int createBucket(BucketVO bucketVO) {
+    public int createBucket(BucketVO bucketVO) throws RocksDBException {
+        QueryWrapper<Bucket> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("bucket_name",bucketVO.getBucketName());
+
+        if (bucketDao.selectOne(queryWrapper)!=null){
+            throw new MyException(500,"存储桶名称不能重复");
+        }
         Bucket bucket = new Bucket();
         BeanUtil.copyProperties(bucketVO,bucket);
         bucket.setTags(bucketVO.getTags().toString());
         bucket.setBucketId(IdUtil.objectId());
         if(bucket.getBucketName() == null || bucket.getBucketName().isBlank())
             throw new MyException(500, "存储桶名称不能为空");
-        else if (bucket.getAccessAuthority().isBlank()) {
+        else if (bucket.getAccessAuthority() == null || bucket.getAccessAuthority().isBlank()) {
             throw new MyException(500, "访问权限不能为空");
-        } else if (bucket.getDomainName().isBlank()) {
+        } else if (bucket.getDomainName() == null || bucket.getDomainName().isBlank()) {
             throw new MyException(500, "域名不能为空");
-        } else if (bucket.getRegion().isBlank()) {
+        } else if (bucket.getRegion() == null || bucket.getRegion().isBlank()) {
             throw new MyException(500, "地区不能为空");
         }
+        // LMDB
+        FileUtil.mkdir(MyConfig.path+"Resource\\"+bucket.getBucketName());
+        LMDBEnvSettings build = LMDBEnvSettingsBuilder.startBuild()
+                .envName(bucket.getBucketName())
+                .filePosition(MyConfig.path+"Resource\\"+bucket.getBucketName())
+                .maxReaders(100)
+                .maxDBInstance(100)
+                .maxSize(1024 * 1024 * 10L)
+                .build();
+        MultipleLmdb.buildNewEnv(build);
+        // RocksDB
+        RocksDBClient.cfAddIfNotExist(bucket.getBucketName());
+        // Derby
         return bucketDao.insert(bucket);
     }
 
     @Override
-    public int deleteBucket(String bucketId) {
-        return bucketDao.deleteById(bucketId);
+    public int deleteBucket(String bucketName) throws RocksDBException {
+        // LMDB
+        FileUtil.del(MyConfig.path+"Resource\\"+bucketName);
+        // RocksDB
+        RocksDBClient.cfDeleteIfExist(bucketName);
+        // Derby
+        QueryWrapper<Bucket> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("bucketName",bucketName);
+        return bucketDao.delete(queryWrapper);
     }
 
     @Override
