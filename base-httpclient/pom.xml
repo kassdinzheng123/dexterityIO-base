@@ -19,14 +19,10 @@
 <dependencies>
     <dependency>
         <groupId>io.dexterity</groupId>
-        <artifactId>base-common</artifactId>
-        <version>1.0</version>
-    </dependency>
-    <dependency>
-        <groupId>io.dexterity</groupId>
         <artifactId>base-metadata</artifactId>
         <version>1.0</version>
     </dependency>
+
     <dependency>
         <groupId>io.dexterity</groupId>
         <artifactId>base-storage</artifactId>
