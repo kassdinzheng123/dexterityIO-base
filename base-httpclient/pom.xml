@@ -9,29 +9,24 @@
         <version>1.0</version>
     </parent>
 
-    <artifactId>base-common</artifactId>
+    <artifactId>base-httpclient</artifactId>
 
     <properties>
         <maven.compiler.source>19</maven.compiler.source>
         <maven.compiler.target>19</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-    <dependencies>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
+<dependencies>
+    <dependency>
+        <groupId>io.dexterity</groupId>
+        <artifactId>base-metadata</artifactId>
+        <version>1.0</version>
+    </dependency>
 
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webflux</artifactId>
-            <version>3.0.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.github.xiaoymin</groupId>
-            <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
-            <version>4.0.0</version>
-        </dependency>
-    </dependencies>
+    <dependency>
+        <groupId>io.dexterity</groupId>
+        <artifactId>base-storage</artifactId>
+        <version>1.0</version>
+    </dependency>
+</dependencies>
 </project>

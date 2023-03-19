@@ -1,9 +1,9 @@
 package io.dexterity.controller;
 
-import io.dexterity.BucketApi;
 import io.dexterity.entity.constants.MetaDataConstants;
-import io.dexterity.po.pojo.R;
+import io.dexterity.po.R;
 import io.dexterity.po.vo.BucketVO;
+import io.dexterity.service.BucketService;
 import io.dexterity.service.WebService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,32 +23,34 @@ import java.util.Map;
 @Tag(name = "后端存储服务",description = "暂无描述")
 public class WebController {
     @Autowired
-    private BucketApi bucketApi;
-    @Autowired
     private WebService webService;
+
+    @Autowired
+    private BucketService bucketService;
+
     @Operation(summary = "查询存储桶列表", description = "从数据库查询创建的存储桶列表")
     @GetMapping("/bucket")
     public R<?> listBucket(){
-        return new R<>(200,"请求成功",bucketApi.listBucket());
+        return new R<>(200,"请求成功",bucketService.listBucket());
     }
 
     @Operation(summary = "创建存储桶", description = "创建一个新的存储桶")
     @PostMapping("/bucket")
     public R<?> createBucket(@RequestBody BucketVO bucket) throws RocksDBException {
-        return new R<>(200,"请求成功",bucketApi.createBucket(bucket));
+        return new R<>(200,"请求成功",bucketService.createBucket(bucket));
     }
 
     @Operation(summary = "删除存储桶", description = "根据前端传来的存储桶id删除存储桶")
     @DeleteMapping("/bucket")
     public R<?> deleteBucket(@RequestParam("bucketName")String bucketName) throws RocksDBException {
-        return new R<>(200,"请求成功",bucketApi.deleteBucket(bucketName));
+        return new R<>(200,"请求成功",bucketService.deleteBucket(bucketName));
     }
 
     @Operation(summary = "更新存储桶状态", description = "通过前端传来的值进行更改存储桶状态")
     @PutMapping("/bucket")
     public R<?> updateBucketStatus(@RequestParam("bucketId")String bucketId,
                                   @RequestParam("status")Integer status){
-        return new R<>(200,"请求成功",bucketApi.updateStatusBucket(bucketId,status));
+        return new R<>(200,"请求成功",bucketService.updateStatusBucket(bucketId,status));
     }
 
     @Operation(summary = "上传对象", description = "上传对象到指定存储桶")

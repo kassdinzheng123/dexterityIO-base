@@ -11,10 +11,11 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>base-core</module>
         <module>base-web</module>
-        <module>base-security</module>
+        <module>base-metadata</module>
+        <module>base-storage</module>
         <module>base-common</module>
+        <module>base-httpclient</module>
     </modules>
 
     <properties>
@@ -189,6 +190,8 @@
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
         </dependency>
+
+
     </dependencies>
     <build>
         <plugins>
