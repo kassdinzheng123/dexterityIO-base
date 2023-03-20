@@ -145,13 +145,13 @@ public class LmdbMetaDataService implements MetaDataService {
      */
     @Override
     public Map<String, MetaData> selectMdByMdRange(String metadataKey, String lb, String ub, String prefix,
-                                                   MultipleEnv multipleEnv, Txn<ByteBuffer> parent) {
+                                                   MultipleEnv multipleEnv, Txn<ByteBuffer> parent,String pageNumber,String pageSize) {
 
         Map<String, MetaData> res = new HashMap<>();
         MultipleDBi db = multipleEnv.getDB(MetaDataConstants.LMDB_METADATA_KEY);
         MultipleDBi metaDB = multipleEnv.getDB(metadataKey);
         if (db == null || metaDB == null) return MapUtil.empty();
-        List<Map.Entry<String, String>> ranged = metaDB.getRangedDuplicatedData(parent, lb, ub, prefix);
+        List<Map.Entry<String, String>> ranged = metaDB.getRangedDuplicatedData(parent, lb, ub, prefix,pageNumber,pageSize);
 
         List<String> keyList = new ArrayList<>();
         ranged.forEach(
@@ -185,11 +185,11 @@ public class LmdbMetaDataService implements MetaDataService {
      */
     @Override
     public Map<String, MetaData> selectMdByKeyRange(String lb, String ub, String prefix,
-                                                    MultipleEnv multipleEnv, Txn<ByteBuffer> parent) {
+                                                    MultipleEnv multipleEnv, Txn<ByteBuffer> parent,String pageNumber,String pageSize) {
         Map<String, MetaData> res = new HashMap<>();
         MultipleDBi db = multipleEnv.getDB(MetaDataConstants.LMDB_METADATA_KEY);
         if (db == null) return MapUtil.empty();
-        List<Map.Entry<String, String>> ranged = db.getRangedDuplicatedData(parent, lb, ub, prefix);
+        List<Map.Entry<String, String>> ranged = db.getRangedDuplicatedData(parent, lb, ub, prefix,pageNumber,pageSize);
 
         Type type = new TypeToken<Map<String, String>>() {
         }.getType();
@@ -213,11 +213,11 @@ public class LmdbMetaDataService implements MetaDataService {
      * @return
      */
     @Override
-    public Map<String, MetaData> selectMdByKeyPrefix(String prefix, MultipleEnv multipleEnv, Txn<ByteBuffer> parent) {
+    public Map<String, MetaData> selectMdByKeyPrefix(String prefix, MultipleEnv multipleEnv, Txn<ByteBuffer> parent,String pageNumber,String pageSize) {
         Map<String, MetaData> res = new HashMap<>();
         MultipleDBi db = multipleEnv.getDB(MetaDataConstants.LMDB_METADATA_KEY);
         if (db == null) return MapUtil.empty();
-        List<Map.Entry<String, String>> ranged = db.prefixSearch(parent, prefix);
+        List<Map.Entry<String, String>> ranged = db.prefixSearch(parent, prefix,pageNumber,pageSize);
 
         Type type = new TypeToken<Map<String, String>>() {
         }.getType();
@@ -231,6 +231,19 @@ public class LmdbMetaDataService implements MetaDataService {
                 });
 
         return res;
+    }
+
+    /**
+     * 检查对象是否属于保护状态
+     * @param key key
+     * @return 是否属于被保护的对象
+     */
+    @Override
+    public boolean checkRetentionOrHold(MultipleEnv multipleEnv, Txn<ByteBuffer> parent,String key) {
+        Map<String, MetaData> stringMetaDataMap = selectMdByKeys(List.of(key), multipleEnv, parent);
+        MetaData metaData = stringMetaDataMap.get(key);
+        return  (Boolean.parseBoolean(metaData.getRetention()) && System.currentTimeMillis() <= Long.parseLong(metaData.getRetainTime()))
+            && Boolean.parseBoolean(metaData.getLegalHold());
     }
 
     /**
@@ -271,7 +284,7 @@ public class LmdbMetaDataService implements MetaDataService {
      * @return
      */
     @Override
-    public Set<String> selectByMetaData(MetaData metaData, MultipleEnv multipleEnv, Txn<ByteBuffer> parent) {
+    public Set<String> selectByMetaData(MetaData metaData, MultipleEnv multipleEnv, Txn<ByteBuffer> parent,String pageNumber,String pageSize) {
         Set<String> keys = new HashSet<>();
         for (var s : metaData.metaDataMap.entrySet()) {
             String key = s.getKey();
@@ -289,29 +302,21 @@ public class LmdbMetaDataService implements MetaDataService {
 
     }
 
-
-    /**
-     * 对匹配matcher的元数据集合，增加一条 newMdValue
-     *
-     * @param matcher    匹配用的metadata
-     * @param newMdKey   新增加的metadata条目
-     * @param newMdValue 新增加的metadata条目对应的值
-     */
     @Override
-    public void addNewMetadata(MetaData matcher, MultipleEnv multipleEnv, Txn<ByteBuffer> parent, String newMdKey, String newMdValue) {
-
-        Set<String> strings = selectByMetaData(matcher, multipleEnv, parent);
+    public void addNewMetadata(String key, MultipleEnv multipleEnv, Txn<ByteBuffer> parent, Map<String,String> additionalMD) {
 
         try (Txn<ByteBuffer> txn = multipleEnv.getEnv().txn(parent)) {
             MultipleDBi multipleDBi = multipleEnv.getDB(MetaDataConstants.LMDB_METADATA_KEY);
-            Map<String, Map<String, String>> metadataMap = multipleDBi.getAsObjects(txn,strings);
-            MultipleDBi metaDB = multipleEnv.getDB(newMdKey);
-            for (var key : metadataMap.keySet()) {
-                var map = metadataMap.get(key);
-                map.put(newMdKey, newMdValue);
-                multipleDBi.putJsonObject(key, map, txn);
-                metaDB.put(newMdValue, key, txn);
-            }
+            Map<String, Map<String, String>> metadataMap = multipleDBi.getAsObjects(txn,key);
+            var map = metadataMap.get(key);
+            map.putAll(additionalMD);
+            multipleDBi.putJsonObject(key, map, txn);
+            additionalMD.forEach(
+                    (k,v)->{
+                        MultipleDBi metaDB = multipleEnv.getDB(k);
+                        metaDB.put(v, key, txn);
+                    }
+            );
             txn.commit();
         }
     }

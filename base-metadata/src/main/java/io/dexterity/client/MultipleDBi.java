@@ -444,21 +444,6 @@ public class MultipleDBi {
         return resList;
     }
 
-    /**
-     * 进行前缀搜索，返回一个由key名称和keyVal对组成的集合
-     *
-     * @param prefix 前缀名称
-     * @return 返回一个Map
-     */
-    public List<Map.Entry<String, String>> prefixSearch(String prefix) {
-        //TODO 测试 和 缓存（由于暂时没用到这个特性，搁置）
-        ByteBuffer prefixBuffer = byteKey(prefix);
-        List<Map.Entry<String, String>> res = new ArrayList<>();
-        try (Txn<ByteBuffer> txn = env.txnWrite()) {
-            iteratePrefix(txn, prefix, prefixBuffer, res);
-        }
-        return res;
-    }
 
     /**
      * 进行前缀搜索，返回一个由key名称和keyVal对组成的集合
@@ -466,11 +451,11 @@ public class MultipleDBi {
      * @param prefix 前缀名称
      * @return 返回一个Map
      */
-    public List<Map.Entry<String, String>> prefixSearch(Txn<ByteBuffer> txn, String prefix) {
+    public List<Map.Entry<String, String>> prefixSearch(Txn<ByteBuffer> txn, String prefix,String pageNumber,String pageSize) {
         //TODO 测试 和 缓存（由于暂时没用到这个特性，搁置）
         ByteBuffer prefixBuffer = byteKey(prefix);
         List<Map.Entry<String, String>> res = new ArrayList<>();
-        iteratePrefix(txn, prefix, prefixBuffer, res);
+        iteratePrefix(txn, prefix, prefixBuffer, res,pageSize,pageNumber);
         return res;
     }
 
@@ -485,12 +470,22 @@ public class MultipleDBi {
     private void iteratePrefix(Txn<ByteBuffer> txn,
                                String prefix,
                                ByteBuffer prefixBuffer,
-                               List<Map.Entry<String, String>> res) {
+                               List<Map.Entry<String, String>> res,
+                               String pageSize,
+                               String pageNumber) {
 
+        int[] ints = raedPage(pageNumber, pageSize);
+        int ps = ints[0];
+        int pn = ints[1];
+        int cur = 0;
         for (CursorIterable.KeyVal<ByteBuffer> next :
                 db.iterate(txn, KeyRange.greaterThan(prefixBuffer))) {
             ByteBuffer keyBuf = next.key();
-            if (stringKey(keyBuf).startsWith(prefix)) res.add(MapUtil.entry(stringKey(next.key()), stringValue(next.val())));
+            cur++;
+            if (!stringKey(keyBuf).startsWith(prefix)) break;
+            if (cur > (pn-1)*ps && cur <= pn * ps){
+                 res.add(MapUtil.entry(stringKey(next.key()), stringValue(next.val())));
+            }
         }
     }
 
@@ -719,6 +714,19 @@ public class MultipleDBi {
         return resultList;
     }
 
+    private int[] raedPage(String pageNumber,String pageSize){
+        int ps = 0;
+        int pn = 0;
+        if (Objects.equals(pageNumber, "all") || pageSize.equals("all")){
+            ps = Integer.MAX_VALUE;
+            pn = Integer.MAX_VALUE;
+        }else{
+            ps = Integer.parseInt(pageSize);
+            pn = Integer.parseInt(pageNumber);
+        }
+        return new int[]{ps,pn};
+    }
+
 
 
     /**
@@ -729,8 +737,17 @@ public class MultipleDBi {
      * @param lb key的下界 可以为空，代表无下届 注意：为大于等于
      * @return 符合条件的所有值
      */
-    public List<Map.Entry<String, String>> getRangedDuplicatedData(Txn<ByteBuffer> parent, String lb, String ub,String prefix) {
+    public List<Map.Entry<String, String>> getRangedDuplicatedData(Txn<ByteBuffer> parent, String lb, String ub,
+                                                                   String prefix,String pageNumber,String pageSize) {
 
+        int ps = 0;
+        int pn = 0;
+
+        int cur = 0;
+
+        int[] ints = raedPage(pageNumber, pageSize);
+        ps = ints[0];
+        pn = ints[1];
 
         //全额返回
         Type type = new TypeToken<Map.Entry<String, String>>() {
@@ -743,7 +760,10 @@ public class MultipleDBi {
             for (CursorIterable.KeyVal<ByteBuffer> byteBufferKeyVal : db.iterate(parent,KeyRange.all())) {
                 String s = stringValue(byteBufferKeyVal.val());
                 if (!s.startsWith(prefix)) break;
-                resultList.add(MapUtil.entry(stringKey(byteBufferKeyVal.key()), s));
+                cur ++;
+                if (cur > (pn-1)*ps && cur <= pn * ps){
+                    resultList.add(MapUtil.entry(stringKey(byteBufferKeyVal.key()), s));
+                }
             }
 
             return resultList;
@@ -758,10 +778,13 @@ public class MultipleDBi {
             if (list != null && !list.isEmpty()) return gson.fromJson(list.get(0), type);
 
             for (CursorIterable.KeyVal<ByteBuffer> byteBufferKeyVal : db.iterate(parent, KeyRange.closed(byteKey(prefix),ubBuffer))) {
-                String s = stringValue(byteBufferKeyVal.val());
+                cur ++;
                 String k = stringKey(byteBufferKeyVal.key());
-                System.out.println(k);
-                if (k.startsWith(prefix)) resultList.add(MapUtil.entry(stringKey(byteBufferKeyVal.key()), s));
+                if (!k.startsWith(prefix)) break;
+                if (cur > (pn-1)*ps && cur <= pn * ps){
+                    String s = stringValue(byteBufferKeyVal.val());
+                    resultList.add(MapUtil.entry(stringKey(byteBufferKeyVal.key()), s));
+                }
             }
 
 
@@ -779,10 +802,13 @@ public class MultipleDBi {
             if (list != null && !list.isEmpty()) return gson.fromJson(list.get(0), type);
 
             for (CursorIterable.KeyVal<ByteBuffer> byteBufferKeyVal : db.iterate(parent, KeyRange.atLeast(lbBuffer))) {
-                String s = stringValue(byteBufferKeyVal.val());
+                cur ++;
                 String k = stringKey(byteBufferKeyVal.key());
-                if (k.startsWith(prefix)) resultList.add(MapUtil.entry(stringKey(byteBufferKeyVal.key()), s));
-                else break;
+                if (!k.startsWith(prefix)) break;
+                if (cur > (pn-1)*ps && cur <= pn * ps){
+                    String s = stringValue(byteBufferKeyVal.val());
+                    resultList.add(MapUtil.entry(stringKey(byteBufferKeyVal.key()), s));
+                }
 
             }
 
@@ -803,11 +829,15 @@ public class MultipleDBi {
         if (list != null && !list.isEmpty()) return gson.fromJson(list.get(0), type);
 
         for (CursorIterable.KeyVal<ByteBuffer> byteBufferKeyVal : db.iterate(parent, KeyRange.closed(lbBuffer, ubBuffer))) {
-            String s = stringValue(byteBufferKeyVal.val());
+            cur ++;
             String k = stringKey(byteBufferKeyVal.key());
-            System.out.println(k);
-            if (k.startsWith(prefix)) resultList.add(MapUtil.entry(stringKey(byteBufferKeyVal.key()), s));
-            else break;
+            if (k.startsWith(prefix)) break;
+
+            if (cur > (pn-1)*ps && cur <= pn * ps){
+                String s = stringValue(byteBufferKeyVal.val());
+                System.out.println(k);
+                resultList.add(MapUtil.entry(stringKey(byteBufferKeyVal.key()), s));
+            }
         }
 
 
@@ -925,21 +955,21 @@ public class MultipleDBi {
     }
 
 
-    /**
-     * 删除以prefix为前缀的键值对
-     *
-     * @param prefix 前缀
-     */
-    public void deletePrefix(String prefix) {
-        //TODO prefix 系列操作
-        List<Map.Entry<String, String>> stringKeyValMap = prefixSearch(prefix);
-        try (Txn<ByteBuffer> txn = env.txnWrite()) {
-            List<String> keys = new ArrayList<>();
-            stringKeyValMap.forEach((key) -> keys.add(key.getKey()));
-            deletePatch(keys);
-            txn.commit();
-        }
-    }
+//    /**
+//     * 删除以prefix为前缀的键值对
+//     *
+//     * @param prefix 前缀
+//     */
+//    public void deletePrefix(String prefix) {
+//        //TODO prefix 系列操作
+//        List<Map.Entry<String, String>> stringKeyValMap = prefixSearch(prefix);
+//        try (Txn<ByteBuffer> txn = env.txnWrite()) {
+//            List<String> keys = new ArrayList<>();
+//            stringKeyValMap.forEach((key) -> keys.add(key.getKey()));
+//            deletePatch(keys);
+//            txn.commit();
+//        }
+//    }
 
 
 }
