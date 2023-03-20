@@ -51,6 +51,7 @@ public class MetaDataController {
     }
 
 
+    @LmdbWrite
     @PostMapping("/md/{key}/{bucket}")
     ResponseEntity<?> updateMetadata(@PathVariable @BucketName String bucket, @PathVariable String key,
                                      @RequestBody @UnDupNames List<String> unDupName,
@@ -67,6 +68,7 @@ public class MetaDataController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @LmdbRead
     @PostMapping("/list")
     ResponseEntity<?> listObjects(@RequestBody RangeQuery rangeQuery,
                      @RequestParam MatcherQuery matcherQuery){
@@ -83,6 +85,7 @@ public class MetaDataController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @LmdbRead
     @GetMapping("/get/{key}/{bucketName}")
     ResponseEntity<?> getObject(@PathVariable String key,@PathVariable @BucketName String bucketName){
         MultipleEnv env = LmdbTxn.getEnv(bucketName);
@@ -92,7 +95,6 @@ public class MetaDataController {
 
         //TODO 利用metadata获取分块,合并并返回
         return new ResponseEntity<>(HttpStatus.OK);
-
     }
 
     /**
@@ -118,9 +120,6 @@ public class MetaDataController {
         );
         return new ResponseEntity<>(httpHeaders, HttpStatus.OK);
     }
-
-
-
 
     @DeleteMapping("/{key}/{bucketName}")
     ResponseEntity<?> deleteObject(@PathVariable String key,@PathVariable String bucketName){

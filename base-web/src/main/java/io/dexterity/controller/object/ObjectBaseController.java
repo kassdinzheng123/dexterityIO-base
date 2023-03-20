@@ -1,4 +1,4 @@
-package io.dexterity.controller;
+package io.dexterity.controller.object;
 
 import io.dexterity.entity.MetaData;
 import io.dexterity.entity.Retention;
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Enumeration;
 
 @RestController
-public class ObjectApiController {
+public class ObjectBaseController {
 
     public MetaData getHeaders(HttpServletRequest request) {
         MetaData entity = new MetaData();
