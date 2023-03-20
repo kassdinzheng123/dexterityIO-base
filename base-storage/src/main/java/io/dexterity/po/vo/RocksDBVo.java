@@ -12,7 +12,9 @@ public class RocksDBVo implements Serializable {
     @NonNull
     @Builder.Default
     private String cfName = "default";
+
     @NonNull
     private byte[] key;
+
     private byte[] value;
 }

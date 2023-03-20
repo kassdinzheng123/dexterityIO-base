@@ -2,36 +2,32 @@ package io.dexterity.service;
 
 import io.dexterity.po.vo.RocksDBVo;
 import org.rocksdb.RocksDBException;
-import org.rocksdb.RocksIterator;
-import org.rocksdb.TransactionDB;
+import org.rocksdb.Transaction;
 
 import java.util.List;
 import java.util.Set;
 
 public interface StorageService {
 
-    int getCount( String cfName) throws RocksDBException;
+    Integer getCount( String cfName,Transaction transaction) throws RocksDBException;
 
-    List<byte[]> getAllKey(String cfName) throws RocksDBException;
+    List<byte[]> getKeys(String cfName,Transaction transaction) throws RocksDBException;
 
-    List<byte[]> getKeysFrom(String cfName,byte[] lastKey) throws RocksDBException;
+    List<byte[]> getKeysFrom(String cfName,byte[] lastKey,Transaction transaction) throws RocksDBException;
 
-    List<RocksDBVo> getAll(String cfName) throws RocksDBException;
+//    List<RocksDBVo> getAll(String cfName,Transaction transaction) throws RocksDBException;
 
-    RocksDBVo get(String cfName, byte[] key) throws RocksDBException;
+    RocksDBVo get(String cfName, byte[] key,Transaction transaction) throws RocksDBException;
 
-    RocksDBVo delete(String cfName, byte[] key) throws RocksDBException;
-    int putBatch(List<RocksDBVo> rocksDBVos) throws RocksDBException;
+    RocksDBVo delete(String cfName, byte[] key,Transaction transaction) throws RocksDBException;
+//    int putBatch(List<RocksDBVo> rocksDBVos,Transaction transaction) throws RocksDBException;
 
-    int put(RocksDBVo rocksDBVo) throws RocksDBException;
+    Integer put(RocksDBVo rocksDBVo, Transaction transaction) throws RocksDBException;
+    Set<String> cfAll(Transaction transaction);
 
-    Set<String> cfAll();
+    Integer cfDelete(String cfName,Transaction transaction) throws RocksDBException;
 
-    int cfDelete(String cfName) throws RocksDBException;
+    Integer cfAdd(String cfName,Transaction transaction) throws RocksDBException;
 
-    int cfAdd(String cfName) throws RocksDBException;
-
-    RocksIterator getIterator(String chunkTmp) throws RocksDBException;
-
-    TransactionDB getTransaction() throws RocksDBException;
+//    RocksIterator getIterator(String cfName,Transaction transaction) throws RocksDBException;
 }

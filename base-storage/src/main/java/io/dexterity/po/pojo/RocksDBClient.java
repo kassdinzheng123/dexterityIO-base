@@ -1,5 +1,6 @@
 package io.dexterity.po.pojo;
 
+
 import io.dexterity.config.MyConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.rocksdb.*;
@@ -22,42 +23,59 @@ import java.util.stream.IntStream;
 public class RocksDBClient {
     @Autowired
     MyConfig myConfig;
-    private static RocksDB rocksDB;
-    private static Options options;
+//    private static RocksDB rocksDB;
+    private static TransactionDB transactionDB;
+    private static DBOptions dbOptions;
+    private static List<ColumnFamilyDescriptor> columnFamilyDescriptors;
+    private static List<ColumnFamilyHandle> columnFamilyHandles;
     private static String rocksDBPath; // RocksDB文件目录
     public static ConcurrentMap<String, ColumnFamilyHandle> columnFamilyHandleMap = new ConcurrentHashMap<>(); //数据库列族(表)集合
     public static int GET_KEYS_BATCH_SIZE = 100000;
     private RocksDBClient() {
     }
+
+
+//    public TransactionDB openTransaction() {
+//        try {
+//            transactionDB = TransactionDB.open(dbOptions,new TransactionDBOptions(), rocksDBPath, columnFamilyDescriptors, columnFamilyHandles);
+//            // 打开TransactionDB实例
+//            return transactionDB;
+//        } catch (RocksDBException e) {
+//            System.out.println("Failed to open TransactionDB: " + e.getMessage());
+//            return null;
+//        }
+//    }
+
     /*
       初始化 RocksDB
      */
-    static{
-        try{
+    static {
+        try {
             String osName = System.getProperty("os.name"); // 获取当前操作系统:Windows 11
             log.info("osName:{}", osName);
             if (osName.toLowerCase().contains("windows")) {
-                rocksDBPath = MyConfig.path+"RocksDB"; // 指定windows系统下RocksDB文件目录
+                rocksDBPath = MyConfig.path + "RocksDB"; // 指定windows系统下RocksDB文件目录
             } else {
                 rocksDBPath = "/usr/local/rocksdb"; // 指定linux系统下RocksDB文件目录
             }
-            RocksDB.loadLibrary(); // 加载RocksDB c++库的静态方法
-            options = new Options(); // Options类包含一组可配置的DB选项,决定数据库的行为
+            TransactionDB.loadLibrary();
+//            RocksDB.loadLibrary(); // 加载RocksDB c++库的静态方法
+            Options options = new Options(); // Options类包含一组可配置的DB选项,决定数据库的行为
             options.setCreateIfMissing(true); // 如果数据库不存在则创建
-            List<byte[]> cfArr = RocksDB.listColumnFamilies(options, rocksDBPath); // 初始化所有已存在列族
-            List<ColumnFamilyDescriptor> columnFamilyDescriptors = new ArrayList<>(); // ColumnFamilyDescriptor集合
+            List<byte[]> cfArr = TransactionDB.listColumnFamilies(options, rocksDBPath); // 初始化所有已存在列族
+            columnFamilyDescriptors = new ArrayList<>(); // ColumnFamilyDescriptor集合
             if (!ObjectUtils.isEmpty(cfArr)) {
                 for (byte[] cf : cfArr) {
                     columnFamilyDescriptors.add(new ColumnFamilyDescriptor(cf, new ColumnFamilyOptions()));
                 }
             } else {
-                columnFamilyDescriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, new ColumnFamilyOptions()));
+                columnFamilyDescriptors.add(new ColumnFamilyDescriptor(TransactionDB.DEFAULT_COLUMN_FAMILY, new ColumnFamilyOptions()));
             }
-            DBOptions dbOptions = new DBOptions();
+            dbOptions = new DBOptions();
             dbOptions.setCreateIfMissing(true);
-            List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>(); //ColumnFamilyHandle集合
+            columnFamilyHandles = new ArrayList<>(); //ColumnFamilyHandle集合
             // 返回一个RocksDB实例的工厂方法
-            rocksDB = RocksDB.open(dbOptions, rocksDBPath, columnFamilyDescriptors, columnFamilyHandles);
+            transactionDB = TransactionDB.open(dbOptions, new TransactionDBOptions(), rocksDBPath, columnFamilyDescriptors, columnFamilyHandles);
             for (int i = 0; i < columnFamilyDescriptors.size(); i++) {
                 ColumnFamilyHandle columnFamilyHandle = columnFamilyHandles.get(i);
                 String cfName = new String(columnFamilyDescriptors.get(i).getName(), StandardCharsets.UTF_8);
@@ -65,11 +83,55 @@ public class RocksDBClient {
             }
             log.info("RocksDB init success!! path:{}", rocksDBPath);
             log.info("cfNames:{}", columnFamilyHandleMap.keySet());
-        }catch (Exception e){
+        } catch (Exception e) {
             log.error("RocksDB init failure!! error:{}", e.getMessage());
             e.printStackTrace();
         }
     }
+
+
+    /*
+      初始化 RocksDB
+     */
+//    static{
+//        try{
+//            String osName = System.getProperty("os.name"); // 获取当前操作系统:Windows 11
+//            log.info("osName:{}", osName);
+//            if (osName.toLowerCase().contains("windows")) {
+//                rocksDBPath = MyConfig.path+"RocksDB"; // 指定windows系统下RocksDB文件目录
+//            } else {
+//                rocksDBPath = "/usr/local/rocksdb"; // 指定linux系统下RocksDB文件目录
+//            }
+//            RocksDB.loadLibrary(); // 加载RocksDB c++库的静态方法
+//            Options options = new Options(); // Options类包含一组可配置的DB选项,决定数据库的行为
+//            options.setCreateIfMissing(true); // 如果数据库不存在则创建
+//            List<byte[]> cfArr = RocksDB.listColumnFamilies(options, rocksDBPath); // 初始化所有已存在列族
+//            columnFamilyDescriptors = new ArrayList<>(); // ColumnFamilyDescriptor集合
+//            if (!ObjectUtils.isEmpty(cfArr)) {
+//                for (byte[] cf : cfArr) {
+//                    columnFamilyDescriptors.add(new ColumnFamilyDescriptor(cf, new ColumnFamilyOptions()));
+//                }
+//            } else {
+//                columnFamilyDescriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, new ColumnFamilyOptions()));
+//            }
+//            dbOptions = new DBOptions();
+//            dbOptions.setCreateIfMissing(true);
+//            columnFamilyHandles = new ArrayList<>(); //ColumnFamilyHandle集合
+//            // 返回一个RocksDB实例的工厂方法
+//            rocksDB = RocksDB.open(dbOptions, rocksDBPath, columnFamilyDescriptors, columnFamilyHandles);
+//            for (int i = 0; i < columnFamilyDescriptors.size(); i++) {
+//                ColumnFamilyHandle columnFamilyHandle = columnFamilyHandles.get(i);
+//                String cfName = new String(columnFamilyDescriptors.get(i).getName(), StandardCharsets.UTF_8);
+//                columnFamilyHandleMap.put(cfName, columnFamilyHandle);
+//            }
+//            rocksDB.close();
+//            log.info("RocksDB init success!! path:{}", rocksDBPath);
+//            log.info("cfNames:{}", columnFamilyHandleMap.keySet());
+//        }catch (Exception e){
+//            log.error("RocksDB init failure!! error:{}", e.getMessage());
+//            e.printStackTrace();
+//        }
+//    }
 
     /**
      * 列族，创建（如果不存在）
@@ -77,7 +139,7 @@ public class RocksDBClient {
     public static ColumnFamilyHandle cfAddIfNotExist(String cfName) throws RocksDBException {
         ColumnFamilyHandle columnFamilyHandle;
         if (!columnFamilyHandleMap.containsKey(cfName)) {
-            columnFamilyHandle = rocksDB.createColumnFamily(new ColumnFamilyDescriptor(cfName.getBytes(), new ColumnFamilyOptions()));
+            columnFamilyHandle = transactionDB.createColumnFamily(new ColumnFamilyDescriptor(cfName.getBytes(), new ColumnFamilyOptions()));
             columnFamilyHandleMap.put(cfName, columnFamilyHandle);
             log.info("cfAddIfNotExist success!! cfName:{}", cfName);
         } else {
@@ -91,7 +153,7 @@ public class RocksDBClient {
      */
     public static void cfDeleteIfExist(String cfName) throws RocksDBException {
         if (columnFamilyHandleMap.containsKey(cfName)) {
-            rocksDB.dropColumnFamily(columnFamilyHandleMap.get(cfName));
+            transactionDB.dropColumnFamily(columnFamilyHandleMap.get(cfName));
             columnFamilyHandleMap.remove(cfName);
             log.info("cfDeleteIfExist success!! cfName:{}", cfName);
         } else {
@@ -102,9 +164,10 @@ public class RocksDBClient {
     /**
      * 增
      */
-    public static void put(String cfName, byte[] key, byte[] value) throws RocksDBException {
+
+    public static void put(String cfName, byte[] key, byte[] value,Transaction transaction) throws RocksDBException {
         ColumnFamilyHandle columnFamilyHandle = cfAddIfNotExist(cfName); //获取列族Handle
-        rocksDB.put(columnFamilyHandle, key, value);
+        transaction.put(columnFamilyHandle, key, value);
     }
 
     /**
@@ -117,23 +180,23 @@ public class RocksDBClient {
         for (Map.Entry<byte[], byte[]> entry : map.entrySet()) {
             writeBatch.put(columnFamilyHandle, entry.getKey(), entry.getValue());
         }
-        rocksDB.write(writeOptions, writeBatch);
+        transactionDB.write(writeOptions, writeBatch);
     }
 
     /**
      * 根据key删kv
      */
-    public static void delete(String cfName, byte[] key) throws RocksDBException {
+    public static void delete(String cfName, byte[] key,Transaction transaction) throws RocksDBException {
         ColumnFamilyHandle columnFamilyHandle = cfAddIfNotExist(cfName); //获取列族Handle
-        rocksDB.delete(columnFamilyHandle, key);
+        transaction.delete(columnFamilyHandle, key);
     }
 
     /**
      * 根据key查value
      */
-    public static byte[] get(String cfName, byte[] key) throws RocksDBException {
+    public static byte[] get(String cfName, byte[] key,Transaction transaction) throws RocksDBException {
         ColumnFamilyHandle columnFamilyHandle = cfAddIfNotExist(cfName); //获取列族Handle
-        return rocksDB.get(columnFamilyHandle, key);
+        return transaction.get(columnFamilyHandle,new ReadOptions(), key);
     }
 
     /**
@@ -144,7 +207,7 @@ public class RocksDBClient {
         ColumnFamilyHandle columnFamilyHandle = cfAddIfNotExist(cfName); //获取列族Handle
         List<ColumnFamilyHandle> columnFamilyHandles;
         columnFamilyHandles = IntStream.range(0, keys.size()).mapToObj(i -> columnFamilyHandle).collect(Collectors.toList());
-        List<byte[]> bytes = rocksDB.multiGetAsList(columnFamilyHandles, keys);
+        List<byte[]> bytes = transactionDB.multiGetAsList(columnFamilyHandles, keys);
         for (int i = 0; i < bytes.size(); i++) {
             map.put(keys.get(i), bytes.get(i));
         }
@@ -160,16 +223,16 @@ public class RocksDBClient {
         for (int i = 0; i < keys.size(); i++) {
             columnFamilyHandles.add(columnFamilyHandle);
         }
-        return rocksDB.multiGetAsList(columnFamilyHandles, keys);
+        return transactionDB.multiGetAsList(columnFamilyHandles, keys);
     }
 
     /**
      * 根据列族查所有key
      */
-    public static List<byte[]> getAllKey(String cfName) throws RocksDBException {
+    public static List<byte[]> getKeys(String cfName,Transaction transaction) throws RocksDBException {
         List<byte[]> list = new ArrayList<>();
         ColumnFamilyHandle columnFamilyHandle = cfAddIfNotExist(cfName); //获取列族Handle
-        try (RocksIterator rocksIterator = rocksDB.newIterator(columnFamilyHandle)) {
+        try (RocksIterator rocksIterator = transaction.getIterator(new ReadOptions(),columnFamilyHandle)) {
             for (rocksIterator.seekToFirst(); rocksIterator.isValid(); rocksIterator.next()) {
                 list.add(rocksIterator.key());
             }
@@ -180,11 +243,11 @@ public class RocksDBClient {
     /**
      * 根据列族，游标查所有key，从lastKey开始查
      */
-    public static List<byte[]> getKeysFrom(String cfName, byte[] lastKey) throws RocksDBException {
+    public static List<byte[]> getKeysFrom(String cfName, byte[] lastKey ,Transaction transaction) throws RocksDBException {
         List<byte[]> list = new ArrayList<>(GET_KEYS_BATCH_SIZE);
         // 获取列族Handle
         ColumnFamilyHandle columnFamilyHandle = cfAddIfNotExist(cfName);
-        try (RocksIterator rocksIterator = rocksDB.newIterator(columnFamilyHandle)) {
+        try (RocksIterator rocksIterator = transaction.getIterator(new ReadOptions(),columnFamilyHandle)) {
             if (lastKey != null) {
                 rocksIterator.seek(lastKey);
                 rocksIterator.next();
@@ -206,7 +269,7 @@ public class RocksDBClient {
     public static Map<byte[], byte[]> getAll(String cfName) throws RocksDBException {
         Map<byte[], byte[]> map = new HashMap<>();
         ColumnFamilyHandle columnFamilyHandle = cfAddIfNotExist(cfName); //获取列族Handle
-        try (RocksIterator rocksIterator = rocksDB.newIterator(columnFamilyHandle)) {
+        try (RocksIterator rocksIterator = transactionDB.newIterator(columnFamilyHandle)) {
             for (rocksIterator.seekToFirst(); rocksIterator.isValid(); rocksIterator.next()) {
                 map.put(rocksIterator.key(), rocksIterator.value());
             }
@@ -217,10 +280,10 @@ public class RocksDBClient {
     /**
      * 查总条数
      */
-    public static int getCount(String cfName) throws RocksDBException {
+    public static int getCount(String cfName,Transaction transaction) throws RocksDBException {
         int count = 0;
         ColumnFamilyHandle columnFamilyHandle = cfAddIfNotExist(cfName); //获取列族Handle
-        try (RocksIterator rocksIterator = rocksDB.newIterator(columnFamilyHandle)) {
+        try (RocksIterator rocksIterator = transaction.getIterator(new ReadOptions(),columnFamilyHandle)) {
             for (rocksIterator.seekToFirst(); rocksIterator.isValid(); rocksIterator.next()) {
                 count++;
             }
@@ -233,13 +296,11 @@ public class RocksDBClient {
         if (columnFamilyHandle == null) {
             throw new IllegalArgumentException("Invalid column family: " + columnFamily);
         }
-        return rocksDB.newIterator(columnFamilyHandle);
+        return transactionDB.newIterator(columnFamilyHandle);
     }
 
-    public static TransactionDB openTransaction() throws RocksDBException {
-        // 打开TransactionDB实例
-        return TransactionDB.open(options, new TransactionDBOptions(), rocksDBPath);
+    public static TransactionDB getTransactionDB(){
+        return transactionDB;
     }
-
 }
 

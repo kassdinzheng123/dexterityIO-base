@@ -1,40 +1,42 @@
 package io.dexterity.aspect;
 
-import io.dexterity.util.NoAutoTransactionalUtil;
-import lombok.extern.slf4j.Slf4j;
+import io.dexterity.po.pojo.RocksDBClient;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Pointcut;
+import org.rocksdb.Transaction;
+import org.rocksdb.TransactionDB;
+import org.rocksdb.WriteOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.TransactionStatus;
-
-
 @Component
-@Slf4j
 @Aspect
 public class RocksDBTransactionalAop {
- 
     @Autowired
-    private NoAutoTransactionalUtil noAutoTransactionalUtil;
- 
-    @Around(value = "@annotation(io.dexterity.annotation.RocksDBTransactional)")
-    public Object around(ProceedingJoinPoint joinPoint){
-        TransactionStatus begin = null;
-        try {
-            begin = noAutoTransactionalUtil.begin();
-            Object result = joinPoint.proceed();//目标方法
-            noAutoTransactionalUtil.commit(begin);
-            return result;
-        } catch (Throwable e) {
-            e.printStackTrace();
-            if(begin != null){
-                noAutoTransactionalUtil.rollback(begin);
-                //业务场景：正常业务回滚，但是下面有些这种统一日志都不需要回滚的
-                // 记录日志systemParameterInfoService.insertlog();
+    RocksDBClient rocksDBClient;
+
+    @Pointcut("@annotation(io.dexterity.annotation.RocksDBTransactional)")
+    public void logPoint(){}
+
+    @Around("logPoint()")
+    public Object around(ProceedingJoinPoint pj) throws Throwable {
+        TransactionDB transactionDB = RocksDBClient.getTransactionDB();
+        Transaction txn = null;
+        Object result=null;
+        try{
+            txn = transactionDB.beginTransaction(new WriteOptions());
+            Object[] args = pj.getArgs();
+            for (int i = 0; i < args.length; i++) {
+                if (args[i] == null) {
+                    args[i] = txn; // 对参数值为null的参数进行赋值
+                }
             }
-            return "系统异常";
+            result = pj.proceed(args);
+            txn.commit();
+        }catch (Throwable e){
+            txn.rollback();
         }
- 
+        return result;
     }
 }

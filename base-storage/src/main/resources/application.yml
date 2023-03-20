@@ -1,2 +1,6 @@
 server:
   port: 9092
+spring:
+  aop:
+    auto: true
+    proxy-target-class: true
