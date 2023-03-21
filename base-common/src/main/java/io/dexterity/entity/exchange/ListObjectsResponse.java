@@ -1,4 +1,6 @@
-package io.dexterity.entity;
+package io.dexterity.entity.exchange;
+
+import io.dexterity.entity.xml.Content;
 
 import java.util.List;
 

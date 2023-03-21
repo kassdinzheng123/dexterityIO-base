@@ -1,5 +1,6 @@
 package io.dexterity.aspect;
 
+import io.dexterity.annotation.LmdbTransaction;
 import io.dexterity.client.MultipleEnv;
 import io.dexterity.client.MultipleLmdb;
 import io.dexterity.exception.LMDBCommonException;
@@ -34,6 +35,10 @@ public class LmdbTxn {
     private static ConcurrentHashMap<String,Txn<ByteBuffer>> writeTxnMap = new ConcurrentHashMap<>();
     private static ConcurrentHashMap<String, MultipleEnv> envMap = new ConcurrentHashMap<>();
 
+    public static final String WRITE = "write";
+
+    public static final String READ = "read";
+
     public static Txn<ByteBuffer> getWriteTxn(String bucketName){
         return writeTxnMap.get(Thread.currentThread().threadId()+bucketName);
     }
@@ -46,48 +51,10 @@ public class LmdbTxn {
         return envMap.get(Thread.currentThread().threadId()+bucketName);
     }
 
-    @Pointcut("@annotation(io.dexterity.annotation.LmdbRead)")
-    public void lmdbRead() {}
+    @Pointcut("@annotation(io.dexterity.annotation.LmdbTransaction)")
+    public void lmdbTransaction() {}
 
-    @Pointcut("@annotation(io.dexterity.annotation.LmdbWrite)")
-    public void lmdbWrite() {}
-
-    @Around("lmdbRead()")
-    public Object handleLmdbRead(ProceedingJoinPoint joinPoint) throws Throwable {
-        Object[] args = joinPoint.getArgs(); // 获取目标方法的参数
-        String bucketName = "";
-        MultipleEnv multipleEnv = null;
-        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-        Method method = signature.getMethod();
-        Annotation[][] parameterAnnotations = method.getParameterAnnotations();
-        for (int i = 0; i < args.length; i++) {
-            Annotation[] annotations = parameterAnnotations[i];
-            for (Annotation annotation : annotations) {
-                if (annotation.annotationType().getName().contains("BucketName")) {
-                    bucketName = args[i].toString();
-                    multipleEnv = MultipleLmdb.envs.get(bucketName);
-                }
-            }
-        }
-        if (multipleEnv == null){
-            throw new LMDBCommonException("BucketName annotation should be used,or this bucket is not exist");
-        }
-
-        String threadId = Thread.currentThread().threadId()+ bucketName;
-        envMap.put(threadId,multipleEnv);
-
-        Txn<ByteBuffer> txnRead = multipleEnv.getEnv().txnRead();
-        readTxnMap.put(threadId,txnRead);
-        try(txnRead){
-            return joinPoint.proceed();
-        }finally{
-            readTxnMap.remove(threadId).close();
-            envMap.remove(threadId);
-        }
-    }
-
-
-    @Around("lmdbWrite()")
+    @Around("lmdbTransaction()")
     public Object handleLmdbWrite(ProceedingJoinPoint joinPoint) throws Throwable {
 
         Object[] args = joinPoint.getArgs(); // 获取目标方法的参数
@@ -99,7 +66,13 @@ public class LmdbTxn {
         MultipleEnv multipleEnv = null;
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
+        LmdbTransaction[] transaction = method.getAnnotationsByType(LmdbTransaction.class);
+        LmdbTransaction lmdbTransaction = transaction[0];
+
         Annotation[][] parameterAnnotations = method.getParameterAnnotations();
+
+        int envParamIndex = -1;
+        int txnParamIndex = -1;
         for (int i = 0; i < args.length; i++) {
             Annotation[] annotations = parameterAnnotations[i];
             for (Annotation annotation : annotations) {
@@ -114,6 +87,12 @@ public class LmdbTxn {
                 if (annotation.annotationType().getName().equals("io.dexterity.annotation.UnDupNames"))
                     if (args[i] instanceof List<?> names)
                         for (Object name : names) unDupNames.add(name.toString());
+            }
+            if (args[i].getClass().getName().contains("org.lmdbjava.Txn")){
+                txnParamIndex = i;
+            }
+            else if (args[i].getClass().getName().contains("MultiPleEnv")){
+                envParamIndex = i;
             }
         }
 
@@ -130,8 +109,22 @@ public class LmdbTxn {
         writeTxnMap.put(threadId, txnWrite);
         Txn<ByteBuffer> txnRead = multipleEnv.getEnv().txnRead();
         readTxnMap.put(threadId, txnRead);
+
+        if (txnParamIndex == -1 || envParamIndex == -1){
+            throw new LMDBCommonException("txn and MultipleEnv should be used in the method params");
+        }
+
+        if(lmdbTransaction.value().equals(WRITE)){
+            args[txnParamIndex] = txnWrite;
+        }else{
+            args[txnParamIndex] = txnRead;
+        }
+
+        args[envParamIndex] = multipleEnv;
+
+
         try (txnWrite;txnRead) {
-            Object obj = joinPoint.proceed();
+            Object obj = joinPoint.proceed(args);
             txnWrite.commit();
             return obj;
         } catch (Env.MapFullException e) {

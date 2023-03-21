@@ -1,8 +1,6 @@
 package io.dexterity.client;
 
 
-import io.dexterity.entity.exchange.ChunkDTO;
-import io.dexterity.entity.exchange.RangeQuery;
 import io.dexterity.po.R;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
