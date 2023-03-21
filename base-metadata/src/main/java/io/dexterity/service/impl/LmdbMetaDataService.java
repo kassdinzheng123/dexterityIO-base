@@ -10,10 +10,6 @@ import io.dexterity.annotation.UnDupNames;
 import io.dexterity.aspect.LmdbTxn;
 import io.dexterity.client.MultipleDBi;
 import io.dexterity.client.MultipleEnv;
-import io.dexterity.client.MultipleLmdb;
-import io.dexterity.entity.BucketInfo;
-import io.dexterity.entity.LMDBEnvSettings;
-import io.dexterity.entity.LMDBEnvSettingsBuilder;
 import io.dexterity.entity.MetaData;
 import io.dexterity.entity.constants.MetaDataConstants;
 import io.dexterity.service.MetaDataService;
@@ -248,23 +244,6 @@ public class LmdbMetaDataService implements MetaDataService {
         MetaData metaData = stringMetaDataMap.get(key);
         return  (Boolean.parseBoolean(metaData.getRetention()) && System.currentTimeMillis() <= Long.parseLong(metaData.getRetainTime()))
             && Boolean.parseBoolean(metaData.getLegalHold());
-    }
-
-    @Override
-    public void insertBucketInfo(BucketInfo bucketInfo,MultipleEnv multipleEnv, Txn<ByteBuffer> parent) {
-        //第一步 buildEnv
-        String metadataLimit = bucketInfo.getMetadataLimit();
-        String maxReader = bucketInfo.getMaxReader();
-
-        LMDBEnvSettings build = LMDBEnvSettingsBuilder.startBuild().maxSize(1024 * 1024 * 100L)
-                .maxDBInstance(200)
-                .maxDBInstance(Integer.parseInt(metadataLimit))
-                .maxReaders(Integer.parseInt(maxReader)).filePosition("D://").build();
-        MultipleEnv multipleEnv1 = MultipleLmdb.buildNewEnv(build);
-
-        try (Txn<ByteBuffer> txn = multipleEnv.getEnv().txn(parent)) {
-
-        }
     }
 
     /**

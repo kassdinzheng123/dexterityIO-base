@@ -1,7 +1,6 @@
 package io.dexterity.service;
 
 import io.dexterity.client.MultipleEnv;
-import io.dexterity.entity.BucketInfo;
 import io.dexterity.entity.MetaData;
 import org.lmdbjava.Txn;
 import org.springframework.stereotype.Service;
@@ -29,6 +28,6 @@ public interface MetaDataService {
     Map<String, MetaData> selectMdByKeyPrefix(String prefix, MultipleEnv multipleEnv,Txn<ByteBuffer> parent,String pageNumber,String pageSize);
     boolean checkRetentionOrHold(MultipleEnv multipleEnv, Txn<ByteBuffer> parent,String key);
 
-    void insertBucketInfo(BucketInfo bucketInfo,MultipleEnv multipleEnv, Txn<ByteBuffer> parent);
+
 
 }

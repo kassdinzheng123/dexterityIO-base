@@ -32,6 +32,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MultipleLmdb {
     private static final String LMDB_INFO_DB = "lmdb-infos";
     private static final String LMDB_ENVS_KEY = "lmdb-envs";
+    public static final String BUCKET_INFOS = "bucket-infos";
+    public static final String MAIN_ENV = "mainEnv";
 
     private static final Gson gson = new Gson();
 
@@ -45,6 +47,9 @@ public class MultipleLmdb {
 
     @Getter
     private static MultipleDBi mainDB;
+
+    @Getter
+    private static MultipleDBi bucketDB;
 
     //保存所有的ENVS
     @Getter
@@ -166,6 +171,8 @@ public class MultipleLmdb {
         try {
             mainDB = multipleEnv
                     .buildDBInstance(LMDB_INFO_DB, false, false);
+            bucketDB = multipleEnv
+                    .buildDBInstance(BUCKET_INFOS, false, false);
         }catch (MultipleEnv.LMDBCreateFailedException e) {
             e.printStackTrace();
             log.error("LMDB init failed: lmdb-info db not correctly created");
