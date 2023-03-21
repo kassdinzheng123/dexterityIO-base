@@ -3,7 +3,7 @@ package io.dexterity.client;
 import cn.hutool.core.bean.BeanUtil;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import io.dexterity.config.MyConfig;
+import io.dexterity.config.properties.LmdbConfigProperties;
 import io.dexterity.entity.LMDBEnvSettings;
 import io.dexterity.entity.LMDBEnvSettingsBuilder;
 import lombok.Getter;
@@ -11,9 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.util.RamUsageEstimator;
 import org.lmdbjava.Env;
 import org.lmdbjava.Txn;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.io.File;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
@@ -33,11 +33,10 @@ public class MultipleLmdb {
     private static final String LMDB_INFO_DB = "lmdb-infos";
     private static final String LMDB_ENVS_KEY = "lmdb-envs";
 
-    private static final Gson gson;
+    private static final Gson gson = new Gson();
 
-    static {
-        gson = new Gson();
-        envs = new ConcurrentHashMap<>();
+    public MultipleLmdb(LmdbConfigProperties lmdbConfigProperties){
+        this.lmdbConfigProperties = lmdbConfigProperties;
         initMainEnv();
     }
 
@@ -49,7 +48,7 @@ public class MultipleLmdb {
 
     //保存所有的ENVS
     @Getter
-    public static ConcurrentHashMap<String, MultipleEnv> envs;
+    public static ConcurrentHashMap<String, MultipleEnv> envs = new ConcurrentHashMap<>();
 
 //    //保存所有的LMDBClientCollections
 //    @Getter
@@ -67,18 +66,20 @@ public class MultipleLmdb {
                 (key,value)-> inserts.put(lmdbEnvSettings.getEnvName()+"-"+key,Collections.singletonList(value.toString()))
         );
 
-        //环境列表插入一个新的环境 这里要线程同步
-        synchronized (MultipleLmdb.class){
-            String s = mainDB.get(LMDB_ENVS_KEY);
-            Type type = new TypeToken<Set<String>>(){}.getType();
-            Set<String> list = gson.fromJson(s,type);
-            if (list == null) list = new HashSet<>();
-            list.add(lmdbEnvSettings.getEnvName());
-            String edited = gson.toJson(list);
-            inserts.put(LMDB_ENVS_KEY,Collections.singletonList(edited));
-        }
+        try(Txn<ByteBuffer> txn = mainEnv.txnWrite()){
+            //环境列表插入一个新的环境 这里要线程同步
+            synchronized (MultipleLmdb.class){
+                String s = mainDB.get(LMDB_ENVS_KEY,txn);
+                Type type = new TypeToken<Set<String>>(){}.getType();
+                Set<String> list = gson.fromJson(s,type);
+                if (list == null) list = new HashSet<>();
+                list.add(lmdbEnvSettings.getEnvName());
+                String edited = gson.toJson(list);
+                inserts.put(LMDB_ENVS_KEY,Collections.singletonList(edited));
+            }
 
-        mainDB.putAll(inserts);
+            mainDB.putAll(txn, inserts);
+        }
 
     }
 
@@ -95,7 +96,11 @@ public class MultipleLmdb {
         inserts.put(dbName + "-isFixDuplicated",Collections.singletonList(isFixDuplicated?"1":"0"));
         inserts.put(dbName + "-isSortedDuplicated",Collections.singletonList(isSortedDuplicated?"1":"0"));
         inserts.put(dbName + "-password",Collections.singletonList(password));
-        mainDB.putAll(inserts);
+
+        try(Txn<ByteBuffer> txn = mainEnv.txnWrite()){
+            mainDB.putAll(txn, inserts);
+            txn.commit();
+        }
     }
 
     public static void removeDBsInfo(String dbName, Txn<ByteBuffer> txn){
@@ -125,56 +130,65 @@ public class MultipleLmdb {
     }
 
     public static void deleteEnv(String envName){
+
         Env<ByteBuffer> env = envs.remove(envName).getEnv();
         env.close();
+        try(Txn<ByteBuffer> txn = mainEnv.txnWrite()) {
+            Set<Map.Entry<String,String>> inserts = new HashSet<>();
+            String s = mainDB.get(LMDB_ENVS_KEY,txn);
+            Type type = new TypeToken<List<String>>(){}.getType();
+            Set<String> list = gson.fromJson(s,type);
+            list.remove(envName);
+            String edited = gson.toJson(list);
 
-        Set<Map.Entry<String,String>> inserts = new HashSet<>();
-        String s = mainDB.get(LMDB_ENVS_KEY);
-        Type type = new TypeToken<List<String>>(){}.getType();
-        Set<String> list = gson.fromJson(s,type);
-        list.remove(envName);
-        String edited = gson.toJson(list);
-
-        mainDB.put(LMDB_ENVS_KEY,edited);
+            mainDB.put(LMDB_ENVS_KEY,edited,txn);
+            txn.commit();
+        }
     }
 
     /**
      * 创建主Env，这个Env将保存所有其他存储桶Env的信息
      */
 
-    @Autowired
-    MyConfig myConfig;
-    public static void initMainEnv(){
+    @Resource
+    LmdbConfigProperties lmdbConfigProperties;
+
+    public void initMainEnv(){
+        long start = System.currentTimeMillis();
         //初始化 mainEnv
         mainEnv = Env.create()
                 .setMapSize(1024L*1024) // 容量为1MB
-                .setMaxDbs(10) // 数据库实例
+                .setMaxDbs(25) // 数据库实例
                 .setMaxReaders(256) // 读事务
-                .open(new File(MyConfig.path+"Resource\\lmdb"));
+                .open(new File(lmdbConfigProperties.getMainDBRoot()));
         MultipleEnv multipleEnv = new MultipleEnv("mainEnv", mainEnv);
         envs.put("mainEnv", multipleEnv);
         try {
-            //初始化mainDB
             mainDB = multipleEnv
                     .buildDBInstance(LMDB_INFO_DB, false, false);
+        }catch (MultipleEnv.LMDBCreateFailedException e) {
+            e.printStackTrace();
+            log.error("LMDB init failed: lmdb-info db not correctly created");
+            System.exit(-1);
+        }
 
+        try (Txn<ByteBuffer> txn = mainEnv.txnWrite();Txn<ByteBuffer> read = mainEnv.txnRead()) {
             //根据mainDB的读取到的数据进行写入 规定：S是一个JSON结构的数组
-            String s = mainDB.get(LMDB_ENVS_KEY);
+            String s = mainDB.get(LMDB_ENVS_KEY,txn);
             Type type = new TypeToken<Set<String>>(){}.getType();
             Set<String> list = gson.fromJson(s,type);
             //初始化所有Env
             if (list != null){
                 for (String envName:list){
-                    initEnvFromMainDB(mainDB,envName);
+                    initEnvFromMainDB(mainDB,envName,txn);
                 }
             }else{
-                mainDB.put(LMDB_ENVS_KEY,gson.toJson(Collections.emptyList()));
+                mainDB.put(LMDB_ENVS_KEY,gson.toJson(Collections.emptyList()),txn);
             }
-        } catch (MultipleEnv.LMDBCreateFailedException e) {
-            e.printStackTrace();
-            log.error("LMDB init failed: lmdb-info db not correctly created");
-            System.exit(-1);
+            txn.commit();
         }
+        long end = System.currentTimeMillis();
+        log.info("Lmdb Metadata Service: init in {} ms",end-start);
     }
 
     /**
@@ -182,8 +196,8 @@ public class MultipleLmdb {
      * @param multipleDBi mainDB的lmdbClient
      * @param envName 当前env的名称
      */
-    private static void initEnvFromMainDB(MultipleDBi multipleDBi, String envName){
-        Map<String,String> patch = multipleDBi.getPatch((envName + "-maxSize"),
+    private static void initEnvFromMainDB(MultipleDBi multipleDBi, String envName,Txn<ByteBuffer> txn){
+        Map<String,String> patch = multipleDBi.getPatch(txn,(envName + "-maxSize"),
                         (envName + "-maxReaders"),
                         (envName + "-maxDBInstance"),
                         (envName + "-filePosition"));
@@ -202,7 +216,7 @@ public class MultipleLmdb {
             return new String(b, StandardCharsets.UTF_8);
         }).toList();
         for (String dbName: collect) {
-            initDBFromMainDB(multipleDBi,multipleEnv,dbName);
+            initDBFromMainDB(multipleDBi,multipleEnv,dbName,txn);
         }
 
     }
@@ -212,8 +226,8 @@ public class MultipleLmdb {
      * @param multipleDBi lmdb客户端
      * @param dbName dbName
      */
-    private static void initDBFromMainDB(MultipleDBi multipleDBi, MultipleEnv multipleEnv, String dbName){
-        Map<String,String> patch = multipleDBi.getPatch((dbName + "-isFixDuplicated"),
+    private static void initDBFromMainDB(MultipleDBi multipleDBi, MultipleEnv multipleEnv, String dbName,Txn<ByteBuffer> txn){
+        Map<String,String> patch = multipleDBi.getPatch(txn,(dbName + "-isFixDuplicated"),
                 (dbName + "-isSortedDuplicated"));
         String isSortedDuplicated = patch.get(dbName + "-isSortedDuplicated");
         String isFixDuplicated = patch.get(dbName + "-isFixDuplicated");
@@ -246,7 +260,9 @@ public class MultipleLmdb {
 
         env.setMapSize(expectedSize);
 
-        mainDB.put(envName + "-maxSize", String.valueOf(expectedSize));
+        try (Txn<ByteBuffer> txn = mainEnv.txnWrite()) {
+            mainDB.put(envName + "-maxSize", String.valueOf(expectedSize),txn);
+        }
 
         log.info("LMDB: Storage Expand Occurs,old capacity is {},new capacity is {}"
                     ,current/(1024*1024),env.info().mapSize/(1024*1024));
@@ -267,7 +283,9 @@ public class MultipleLmdb {
         log.info("LMDB: current size is {}",current);
         env.setMapSize((long) (current*1.5));
 
-        mainDB.put(envName + "-maxSize", String.valueOf((long) (current*1.5)));
+        try (Txn<ByteBuffer> txn = mainEnv.txnWrite()) {
+            mainDB.put(envName + "-maxSize", String.valueOf((long) (current*1.5)),txn);
+        }
 
         log.info("LMDB: Storage Reduce Occurs,old capacity is {},new capacity is {}",
                 env.info().mapSize/(1024*1024),current*1.5/(1024*1024));

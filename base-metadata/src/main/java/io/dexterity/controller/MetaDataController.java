@@ -3,8 +3,7 @@ package io.dexterity.controller;
 import io.dexterity.annotation.*;
 import io.dexterity.aspect.LmdbTxn;
 import io.dexterity.client.MultipleEnv;
-import io.dexterity.client.MultipleLmdb;
-import io.dexterity.entity.LMDBEnvSettings;
+import io.dexterity.entity.BucketInfo;
 import io.dexterity.entity.MetaData;
 import io.dexterity.entity.exchange.MatcherQuery;
 import io.dexterity.entity.exchange.RangeQuery;
@@ -76,8 +75,10 @@ public class MetaDataController {
      * @return
      */
     @PostMapping("/open")
-    ResponseEntity<?> openBucket(@RequestBody LMDBEnvSettings lmdbEnvSettings){
-        MultipleLmdb.buildNewEnv(lmdbEnvSettings);
+    ResponseEntity<?> openBucket(@RequestBody BucketInfo bucketInfo){
+
+
+//        MultipleLmdb.buildNewEnv(lmdbEnvSettings);
         //TODO rocksDB开启环境
         return new ResponseEntity<>(HttpStatus.OK);
     }

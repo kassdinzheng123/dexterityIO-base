@@ -1,3 +1,6 @@
 server:
   port: 9091
+metadata:
+  bucket-data-root: D:\Resource\bucket
+  main-d-b-root: D:\Resource\lmdb
 
